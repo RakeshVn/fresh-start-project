@@ -23,6 +23,14 @@ export const MESSAGES = [
   [
     '',
     '',
+    'I ❤️',
+    'FLAPSTR',
+    '',
+    ''
+  ],
+  [
+    '',
+    '',
     'STAY HUNGRY',
     'STAY FOOLISH',
     '- STEVE JOBS',

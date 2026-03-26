@@ -12,6 +12,13 @@ const filterLine = (s) =>
 
 const msgLabel = (lines) => lines.find(l => l.trim()) || 'Message';
 
+const EMOJIS = [
+  '😀','😊','😍','🤔','😎','🥳','🤩','😂',
+  '👍','👋','🙌','💪','👀','🫶','🤝','✌️',
+  '🎉','✨','🔥','💡','⭐','🎯','🚀','🏆',
+  '❤️','💬','📌','📝','🎨','🎵','☕','🌟',
+];
+
 export default function App() {
   const boardRef = useRef(null);
   const soundEngineRef = useRef(new SoundEngine());
@@ -23,7 +30,11 @@ export default function App() {
   const toastTimerRef = useRef(null);
 
   const [messages, setMessages] = useState(() =>
-    MESSAGES.map((lines, i) => ({ id: i, lines }))
+    MESSAGES.map((entry, i) => ({
+      id: i,
+      lines: Array.isArray(entry) ? entry : entry.lines,
+      emoji: Array.isArray(entry) ? undefined : entry.emoji,
+    }))
   );
   const messagesRef = useRef(messages);
   useEffect(() => { messagesRef.current = messages; }, [messages]);
@@ -32,12 +43,17 @@ export default function App() {
 
   const [showPanel, setShowPanel] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const [addingNew, setAddingNew] = useState(false);
   const [draftLines, setDraftLines] = useState(['', '', '', '', '', '']);
+  const [draftEmoji, setDraftEmoji] = useState('');
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const showPanelRef = useRef(false);
   const showShortcutsRef = useRef(false);
+  const showModalRef = useRef(false);
   useEffect(() => { showPanelRef.current = showPanel; }, [showPanel]);
   useEffect(() => { showShortcutsRef.current = showShortcuts; }, [showShortcuts]);
+  useEffect(() => { showModalRef.current = showModal; }, [showModal]);
 
 
   const initAudio = useCallback(async () => {
@@ -107,23 +123,34 @@ export default function App() {
     setAddingNew(false);
   }, []);
 
+  const resetDraft = useCallback(() => {
+    setDraftLines(['', '', '', '', '', '']);
+    setDraftEmoji('');
+    setShowEmojiPicker(false);
+    setAddingNew(false);
+  }, []);
+
   const closePanel = useCallback(() => {
     setShowPanel(false);
-    setAddingNew(false);
     setDraftLines(['', '', '', '', '', '']);
+    setDraftEmoji('');
+    setShowEmojiPicker(false);
+    setAddingNew(false);
   }, []);
 
   const addMessage = useCallback(() => {
     const trimmed = draftLines.map(l => l.trim());
     if (!trimmed.some(l => l)) return;
     const id = nextIdRef.current++;
-    setMessages(prev => [...prev, { id, lines: trimmed }]);
+    setMessages(prev => [...prev, { id, lines: trimmed, emoji: draftEmoji }]);
     setDraftLines(['', '', '', '', '', '']);
+    setDraftEmoji('');
+    setShowEmojiPicker(false);
     setAddingNew(false);
     boardRef.current?.displayMessage(trimmed);
     setActiveMsgId(id);
     clearInterval(rotatorTimerRef.current);
-  }, [draftLines]);
+  }, [draftLines, draftEmoji]);
 
   const deleteMessage = useCallback((id, e) => {
     e.stopPropagation();
@@ -176,7 +203,8 @@ export default function App() {
           toggleMute();
           break;
         case 'Escape':
-          if (showPanelRef.current) { closePanel(); }
+          if (showModalRef.current) { setShowModal(false); }
+          else if (showPanelRef.current) { closePanel(); }
           else if (showShortcutsRef.current) { setShowShortcuts(false); }
           else if (document.fullscreenElement) document.exitFullscreen();
           break;
@@ -212,7 +240,14 @@ export default function App() {
                 <>
                   <div className="popup-backdrop" onClick={closePanel} />
                   <div className="popup msg-popup">
-                    <div className="popup-section-label">Messages</div>
+                    <div className="popup-header-row">
+                      <span className="popup-section-label">Messages</span>
+                      <button className="popup-expand-btn" title="Expand" onClick={() => { closePanel(); setShowModal(true); }}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
+                        </svg>
+                      </button>
+                    </div>
                     <div className="msg-list">
                       {messages.map(msg => (
                         <div
@@ -220,6 +255,7 @@ export default function App() {
                           className={`msg-item${activeMsgId === msg.id ? ' active' : ''}`}
                           onClick={() => displayById(msg.id)}
                         >
+                          {msg.emoji && <span className="msg-emoji">{msg.emoji}</span>}
                           <div className="msg-item-content">
                             <div className="msg-item-label">{msgLabel(msg.lines)}</div>
                             <div className="msg-item-preview">{msg.lines.filter(l => l.trim()).join(' · ')}</div>
@@ -230,7 +266,22 @@ export default function App() {
                     </div>
                     {addingNew ? (
                       <div className="add-form">
-                        <div className="popup-section-label" style={{marginTop: '4px'}}>New message</div>
+                        <div className="add-form-header">
+                          <span className="popup-section-label" style={{padding: 0}}>New message</span>
+                          <div className="emoji-field">
+                            <button className="emoji-trigger" onClick={() => setShowEmojiPicker(v => !v)}>
+                              {draftEmoji || <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 13s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/></svg>}
+                            </button>
+                            {draftEmoji && <button className="emoji-clear" onClick={() => setDraftEmoji('')}>×</button>}
+                          </div>
+                        </div>
+                        {showEmojiPicker && (
+                          <div className="emoji-grid">
+                            {EMOJIS.map(e => (
+                              <button key={e} className="emoji-opt" onClick={() => { setDraftEmoji(e); setShowEmojiPicker(false); }}>{e}</button>
+                            ))}
+                          </div>
+                        )}
                         {draftLines.map((line, i) => (
                           <input
                             key={i}
@@ -249,12 +300,12 @@ export default function App() {
                                   e.currentTarget.closest('.add-form').querySelectorAll('.draft-input')[i + 1]?.focus();
                                 } else { addMessage(); }
                               }
-                              if (e.key === 'Escape') { setAddingNew(false); setDraftLines(['', '', '', '', '', '']); }
+                              if (e.key === 'Escape') resetDraft();
                             }}
                           />
                         ))}
                         <div className="add-form-actions">
-                          <button className="form-cancel" onClick={() => { setAddingNew(false); setDraftLines(['', '', '', '', '', '']); }}>Cancel</button>
+                          <button className="form-cancel" onClick={resetDraft}>Cancel</button>
                           <button className="form-save" onClick={addMessage}>Add</button>
                         </div>
                       </div>
@@ -291,6 +342,88 @@ export default function App() {
           </div>
         </div>
       </div>
+
+      {/* Messages modal */}
+      {showModal && (
+        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="messages-modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Messages</h3>
+              <button className="modal-close" onClick={() => setShowModal(false)}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="msg-list modal-msg-list">
+                {messages.map(msg => (
+                  <div
+                    key={msg.id}
+                    className={`msg-item${activeMsgId === msg.id ? ' active' : ''}`}
+                    onClick={() => { displayById(msg.id); setShowModal(false); }}
+                  >
+                    {msg.emoji && <span className="msg-emoji">{msg.emoji}</span>}
+                    <div className="msg-item-content">
+                      <div className="msg-item-label">{msgLabel(msg.lines)}</div>
+                      <div className="msg-item-preview">{msg.lines.filter(l => l.trim()).join(' · ')}</div>
+                    </div>
+                    <button className="msg-item-delete" onClick={(e) => deleteMessage(msg.id, e)}>×</button>
+                  </div>
+                ))}
+              </div>
+              {addingNew ? (
+                <div className="add-form modal-add-form">
+                  <div className="add-form-header">
+                    <div className="modal-form-label" style={{margin: 0}}>New message</div>
+                    <div className="emoji-field">
+                      <button className="emoji-trigger" onClick={() => setShowEmojiPicker(v => !v)}>
+                        {draftEmoji || <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 13s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/></svg>}
+                      </button>
+                      {draftEmoji && <button className="emoji-clear" onClick={() => setDraftEmoji('')}>×</button>}
+                    </div>
+                  </div>
+                  {showEmojiPicker && (
+                    <div className="emoji-grid">
+                      {EMOJIS.map(e => (
+                        <button key={e} className="emoji-opt" onClick={() => { setDraftEmoji(e); setShowEmojiPicker(false); }}>{e}</button>
+                      ))}
+                    </div>
+                  )}
+                  {draftLines.map((line, i) => (
+                    <input
+                      key={i}
+                      className="draft-input"
+                      value={line}
+                      placeholder={`Row ${i + 1}`}
+                      autoFocus={i === 0}
+                      onChange={e => {
+                        const val = filterLine(e.target.value);
+                        setDraftLines(prev => prev.map((v, j) => j === i ? val : v));
+                      }}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          if (i < 5) {
+                            e.currentTarget.closest('.add-form').querySelectorAll('.draft-input')[i + 1]?.focus();
+                          } else { addMessage(); }
+                        }
+                        if (e.key === 'Escape') resetDraft();
+                      }}
+                    />
+                  ))}
+                  <div className="add-form-actions">
+                    <button className="form-cancel" onClick={resetDraft}>Cancel</button>
+                    <button className="form-save" onClick={addMessage}>Add</button>
+                  </div>
+                </div>
+              ) : (
+                <button className="add-new-btn modal-add-new-btn" onClick={() => setAddingNew(true)}>+ New message</button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {toast && <div className="toast">{toast}</div>}
     </div>
