@@ -35,7 +35,9 @@ export default function App() {
   const [addingNew, setAddingNew] = useState(false);
   const [draftLines, setDraftLines] = useState(['', '', '', '', '', '']);
   const showPanelRef = useRef(false);
+  const showShortcutsRef = useRef(false);
   useEffect(() => { showPanelRef.current = showPanel; }, [showPanel]);
+  useEffect(() => { showShortcutsRef.current = showShortcuts; }, [showShortcuts]);
 
 
   const initAudio = useCallback(async () => {
@@ -175,6 +177,7 @@ export default function App() {
           break;
         case 'Escape':
           if (showPanelRef.current) { closePanel(); }
+          else if (showShortcutsRef.current) { setShowShortcuts(false); }
           else if (document.fullscreenElement) document.exitFullscreen();
           break;
         default:
@@ -198,99 +201,96 @@ export default function App() {
             <Board ref={boardRef} soundEngine={soundEngineRef.current} />
           </div>
           <div className="board-controls">
-            <button className="messages-fab" onClick={openPanel} title="Manage messages">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-              </svg>
-              <span>Messages</span>
-            </button>
-            <div className="shortcuts-wrap">
-              <button
-                className="keyboard-hint"
-                title="Keyboard shortcuts"
-                onClick={() => setShowShortcuts(v => !v)}
-              >N</button>
+            {/* Messages popup */}
+            <div className="popup-wrap">
+              <button className="ctrl-btn" onClick={openPanel} title="Messages">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+              </button>
+              {showPanel && (
+                <>
+                  <div className="popup-backdrop" onClick={closePanel} />
+                  <div className="popup msg-popup">
+                    <div className="popup-section-label">Messages</div>
+                    <div className="msg-list">
+                      {messages.map(msg => (
+                        <div
+                          key={msg.id}
+                          className={`msg-item${activeMsgId === msg.id ? ' active' : ''}`}
+                          onClick={() => displayById(msg.id)}
+                        >
+                          <div className="msg-item-content">
+                            <div className="msg-item-label">{msgLabel(msg.lines)}</div>
+                            <div className="msg-item-preview">{msg.lines.filter(l => l.trim()).join(' · ')}</div>
+                          </div>
+                          <button className="msg-item-delete" onClick={(e) => deleteMessage(msg.id, e)}>×</button>
+                        </div>
+                      ))}
+                    </div>
+                    {addingNew ? (
+                      <div className="add-form">
+                        <div className="popup-section-label" style={{marginTop: '4px'}}>New message</div>
+                        {draftLines.map((line, i) => (
+                          <input
+                            key={i}
+                            className="draft-input"
+                            value={line}
+                            placeholder={`Row ${i + 1}`}
+                            autoFocus={i === 0}
+                            onChange={e => {
+                              const val = filterLine(e.target.value);
+                              setDraftLines(prev => prev.map((v, j) => j === i ? val : v));
+                            }}
+                            onKeyDown={e => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                if (i < 5) {
+                                  e.currentTarget.closest('.add-form').querySelectorAll('.draft-input')[i + 1]?.focus();
+                                } else { addMessage(); }
+                              }
+                              if (e.key === 'Escape') { setAddingNew(false); setDraftLines(['', '', '', '', '', '']); }
+                            }}
+                          />
+                        ))}
+                        <div className="add-form-actions">
+                          <button className="form-cancel" onClick={() => { setAddingNew(false); setDraftLines(['', '', '', '', '', '']); }}>Cancel</button>
+                          <button className="form-save" onClick={addMessage}>Add</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button className="add-new-btn" onClick={() => setAddingNew(true)}>+ New message</button>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Info / shortcuts popup */}
+            <div className="popup-wrap">
+              <button className="ctrl-btn" title="Keyboard shortcuts" onClick={() => setShowShortcuts(v => !v)}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="2" y="6" width="20" height="12" rx="2"/>
+                  <path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M8 14h8"/>
+                </svg>
+              </button>
               {showShortcuts && (
-                <div className="shortcuts-overlay">
-                  <div><span>Custom message</span><kbd>Enter</kbd></div>
-                  <div><span>Next message</span><kbd>Space / →</kbd></div>
-                  <div><span>Previous</span><kbd>←</kbd></div>
-                  <div><span>Fullscreen</span><kbd>F</kbd></div>
-                  <div><span>Mute</span><kbd>M</kbd></div>
-                </div>
+                <>
+                  <div className="popup-backdrop" onClick={() => setShowShortcuts(false)} />
+                  <div className="popup shortcuts-popup">
+                    <div className="popup-section-label">Shortcuts</div>
+                    <div className="shortcut-row"><span>Custom message</span><kbd>Enter</kbd></div>
+                    <div className="shortcut-row"><span>Next</span><kbd>Space / →</kbd></div>
+                    <div className="shortcut-row"><span>Previous</span><kbd>←</kbd></div>
+                    <div className="shortcut-row"><span>Fullscreen</span><kbd>F</kbd></div>
+                    <div className="shortcut-row"><span>Mute</span><kbd>M</kbd></div>
+                  </div>
+                </>
               )}
             </div>
           </div>
         </div>
       </div>
-
-
-      {/* Messages panel */}
-      {showPanel && (
-        <div className="panel-overlay" onClick={closePanel}>
-          <div className="msg-panel" onClick={e => e.stopPropagation()}>
-            <div className="panel-header">
-              <h3>Messages</h3>
-              <button className="panel-close" onClick={closePanel}>×</button>
-            </div>
-            <div className="msg-list">
-              {messages.map(msg => (
-                <div
-                  key={msg.id}
-                  className={`msg-item${activeMsgId === msg.id ? ' active' : ''}`}
-                  onClick={() => displayById(msg.id)}
-                >
-                  <div className="msg-item-content">
-                    <div className="msg-item-label">{msgLabel(msg.lines)}</div>
-                    <div className="msg-item-preview">
-                      {msg.lines.filter(l => l.trim()).join(' · ')}
-                    </div>
-                  </div>
-                  <button className="msg-item-delete" onClick={(e) => deleteMessage(msg.id, e)} title="Delete">×</button>
-                </div>
-              ))}
-            </div>
-            {addingNew ? (
-              <div className="add-form">
-                <h4>New message</h4>
-                {draftLines.map((line, i) => (
-                  <input
-                    key={i}
-                    className="draft-input"
-                    value={line}
-                    placeholder={`Row ${i + 1}`}
-                    autoFocus={i === 0}
-                    onChange={e => {
-                      const val = filterLine(e.target.value);
-                      setDraftLines(prev => prev.map((v, j) => j === i ? val : v));
-                    }}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        if (i < 5) {
-                          e.currentTarget.closest('.add-form').querySelectorAll('.draft-input')[i + 1]?.focus();
-                        } else {
-                          addMessage();
-                        }
-                      }
-                      if (e.key === 'Escape') {
-                        setAddingNew(false);
-                        setDraftLines(['', '', '', '', '', '']);
-                      }
-                    }}
-                  />
-                ))}
-                <div className="add-form-actions">
-                  <button className="form-cancel" onClick={() => { setAddingNew(false); setDraftLines(['', '', '', '', '', '']); }}>Cancel</button>
-                  <button className="form-save" onClick={addMessage}>Add</button>
-                </div>
-              </div>
-            ) : (
-              <button className="add-new-btn" onClick={() => setAddingNew(true)}>+ New message</button>
-            )}
-          </div>
-        </div>
-      )}
 
       {toast && <div className="toast">{toast}</div>}
     </div>

@@ -3,8 +3,7 @@ export default function Hero() {
     <section className="hero">
       <h1>Turn any TV into a retro split-flap display.</h1>
       <p className="subtitle">
-        The classic flip-board look, without the $3,500 hardware.<br />
-        Free and open source.
+        The classic flip-board look, without the $3,500 hardware.
       </p>
       <div className="scroll-indicator">
         <span>Scroll</span>
