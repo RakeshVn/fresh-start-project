@@ -188,20 +188,21 @@ export default function App() {
     <div className="page-wrapper">
       <Header muted={muted} onVolumeClick={handleVolumeClick} />
 
-      <div className="hero-section">
-        <Hero />
-      </div>
-
-      <div className="board-section">
-        <div className="display-frame">
-          <Board ref={boardRef} soundEngine={soundEngineRef.current} />
+      <div className="single-screen">
+        <div className="hero-area">
+          <Hero />
         </div>
-        <button className="messages-fab" onClick={openPanel} title="Manage messages">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-          </svg>
-          <span>Messages</span>
-        </button>
+        <div className="board-area">
+          <div className="display-frame">
+            <Board ref={boardRef} soundEngine={soundEngineRef.current} />
+          </div>
+          <button className="messages-fab" onClick={openPanel} title="Manage messages">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            <span>Messages</span>
+          </button>
+        </div>
       </div>
 
 
