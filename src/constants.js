@@ -22,12 +22,6 @@ export const ACCENT_COLORS = [
 export const MESSAGES = [
   [
     '',
-    'GOD IS IN',
-    'THE DETAILS .',
-    '- LUDWIG MIES',
-    ''
-  ],
-  [
     '',
     'STAY HUNGRY',
     'STAY FOOLISH',
@@ -35,6 +29,15 @@ export const MESSAGES = [
     ''
   ],
   [
+    '',
+    '',
+    'GOD IS IN',
+    'THE DETAILS .',
+    '- LUDWIG MIES',
+    ''
+  ],
+  [
+    '',
     '',
     'GOOD DESIGN IS',
     'GOOD BUSINESS',
@@ -46,9 +49,11 @@ export const MESSAGES = [
     'LESS IS MORE',
     '',
     '- MIES VAN DER ROHE',
+    '',
     ''
   ],
   [
+    '',
     '',
     'MAKE IT SIMPLE',
     'BUT SIGNIFICANT',
@@ -56,6 +61,7 @@ export const MESSAGES = [
     ''
   ],
   [
+    '',
     '',
     'HAVE NO FEAR OF',
     'PERFECTION',
