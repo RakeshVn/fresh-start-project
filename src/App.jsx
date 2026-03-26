@@ -31,6 +31,7 @@ export default function App() {
   const [activeMsgId, setActiveMsgId] = useState(null);
 
   const [showPanel, setShowPanel] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
   const [addingNew, setAddingNew] = useState(false);
   const [draftLines, setDraftLines] = useState(['', '', '', '', '', '']);
   const showPanelRef = useRef(false);
@@ -196,12 +197,30 @@ export default function App() {
           <div className="display-frame">
             <Board ref={boardRef} soundEngine={soundEngineRef.current} />
           </div>
-          <button className="messages-fab" onClick={openPanel} title="Manage messages">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-            </svg>
-            <span>Messages</span>
-          </button>
+          <div className="board-controls">
+            <button className="messages-fab" onClick={openPanel} title="Manage messages">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              </svg>
+              <span>Messages</span>
+            </button>
+            <div className="shortcuts-wrap">
+              <button
+                className="keyboard-hint"
+                title="Keyboard shortcuts"
+                onClick={() => setShowShortcuts(v => !v)}
+              >N</button>
+              {showShortcuts && (
+                <div className="shortcuts-overlay">
+                  <div><span>Custom message</span><kbd>Enter</kbd></div>
+                  <div><span>Next message</span><kbd>Space / →</kbd></div>
+                  <div><span>Previous</span><kbd>←</kbd></div>
+                  <div><span>Fullscreen</span><kbd>F</kbd></div>
+                  <div><span>Mute</span><kbd>M</kbd></div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 

@@ -32,7 +32,6 @@ const Board = forwardRef(({ soundEngine }, ref) => {
   const isTransitioningRef = useRef(false);
   const accentIndexRef = useRef(0);
   const [accentColor, setAccentColor] = useState(ACCENT_COLORS[0]);
-  const [showOverlay, setShowOverlay] = useState(false);
 
   const formatToGrid = useCallback(
     (lines) => {
@@ -98,34 +97,12 @@ const Board = forwardRef(({ soundEngine }, ref) => {
       className="board"
       style={{ '--grid-cols': cols, '--grid-rows': rows }}
     >
-      {/* Tile grid */}
       <div className="tile-grid">
         {Array.from({ length: rows }, (_, r) =>
           Array.from({ length: cols }, (_, c) => (
             <Tile key={`${r}-${c}`} ref={tileRefs[r][c]} />
           ))
         )}
-      </div>
-
-      {/* Keyboard hint */}
-      <div
-        className="keyboard-hint"
-        title="Keyboard shortcuts"
-        onClick={(e) => {
-          e.stopPropagation();
-          setShowOverlay((v) => !v);
-        }}
-      >
-        N
-      </div>
-
-      {/* Shortcuts overlay */}
-      <div className={`shortcuts-overlay${showOverlay ? ' visible' : ''}`}>
-        <div><span>Custom message</span><kbd>Enter</kbd></div>
-        <div><span>Next message</span><kbd>Space / →</kbd></div>
-        <div><span>Previous</span><kbd>←</kbd></div>
-        <div><span>Fullscreen</span><kbd>F</kbd></div>
-        <div><span>Mute</span><kbd>M</kbd></div>
       </div>
     </div>
   );
