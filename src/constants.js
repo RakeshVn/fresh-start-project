@@ -1,5 +1,5 @@
 export const GRID_COLS = 22;
-export const GRID_ROWS = 5;
+export const GRID_ROWS = 6;
 
 export const SCRAMBLE_DURATION = 800;
 export const FLIP_DURATION = 300;
@@ -15,12 +15,21 @@ export const SCRAMBLE_COLORS = [
 ];
 
 export const ACCENT_COLORS = [
-  '#00FF7F', '#FF4D00', '#AA00FF',
-  '#00AAFF', '#00FFCC'
+  '#C850C0', '#8B5CF6', '#C850C0',
+  '#8B5CF6', '#C850C0'
 ];
 
 export const MESSAGES = [
   [
+    '',
+    '',
+    'STAY HUNGRY',
+    'STAY FOOLISH',
+    '- STEVE JOBS',
+    ''
+  ],
+  [
+    '',
     '',
     'GOD IS IN',
     'THE DETAILS .',
@@ -29,12 +38,6 @@ export const MESSAGES = [
   ],
   [
     '',
-    'STAY HUNGRY',
-    'STAY FOOLISH',
-    '- STEVE JOBS',
-    ''
-  ],
-  [
     '',
     'GOOD DESIGN IS',
     'GOOD BUSINESS',
@@ -46,9 +49,11 @@ export const MESSAGES = [
     'LESS IS MORE',
     '',
     '- MIES VAN DER ROHE',
+    '',
     ''
   ],
   [
+    '',
     '',
     'MAKE IT SIMPLE',
     'BUT SIGNIFICANT',
@@ -56,6 +61,7 @@ export const MESSAGES = [
     ''
   ],
   [
+    '',
     '',
     'HAVE NO FEAR OF',
     'PERFECTION',

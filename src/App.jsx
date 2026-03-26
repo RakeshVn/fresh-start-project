@@ -22,7 +22,6 @@ export default function App() {
   const rotatorTimerRef = useRef(null);
   const toastTimerRef = useRef(null);
 
-  // All messages (preset + user-added)
   const [messages, setMessages] = useState(() =>
     MESSAGES.map((lines, i) => ({ id: i, lines }))
   );
@@ -31,12 +30,30 @@ export default function App() {
   const nextIdRef = useRef(MESSAGES.length);
   const [activeMsgId, setActiveMsgId] = useState(null);
 
-  // Panel state
   const [showPanel, setShowPanel] = useState(false);
   const [addingNew, setAddingNew] = useState(false);
-  const [draftLines, setDraftLines] = useState(['', '', '', '', '']);
+  const [draftLines, setDraftLines] = useState(['', '', '', '', '', '']);
   const showPanelRef = useRef(false);
   useEffect(() => { showPanelRef.current = showPanel; }, [showPanel]);
+
+  // Scroll-driven board reveal
+  const boardSectionRef = useRef(null);
+  const [boardProgress, setBoardProgress] = useState(0);
+
+  useEffect(() => {
+    const onScroll = () => {
+      const section = boardSectionRef.current;
+      if (!section) return;
+      const rect = section.getBoundingClientRect();
+      const vh = window.innerHeight;
+      // progress: 0 when section top is at bottom of viewport, 1 when section top reaches top
+      const raw = 1 - rect.top / vh;
+      setBoardProgress(Math.max(0, Math.min(1, raw)));
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   const initAudio = useCallback(async () => {
     if (audioInitializedRef.current) return;
@@ -90,15 +107,6 @@ export default function App() {
     toggleMute();
   }, [initAudio, toggleMute]);
 
-  const handleCtaClick = useCallback((e) => {
-    e.preventDefault();
-    initAudio();
-    document.getElementById('board-container')?.scrollIntoView({ behavior: 'smooth' });
-    setTimeout(() => {
-      document.documentElement.requestFullscreen().catch(() => {});
-    }, 400);
-  }, [initAudio]);
-
   const displayById = useCallback((id) => {
     const msgs = messagesRef.current;
     const idx = msgs.findIndex(m => m.id === id);
@@ -117,12 +125,7 @@ export default function App() {
   const closePanel = useCallback(() => {
     setShowPanel(false);
     setAddingNew(false);
-    setDraftLines(['', '', '', '', '']);
-  }, []);
-
-  const openAddNew = useCallback(() => {
-    setShowPanel(true);
-    setAddingNew(true);
+    setDraftLines(['', '', '', '', '', '']);
   }, []);
 
   const addMessage = useCallback(() => {
@@ -130,7 +133,7 @@ export default function App() {
     if (!trimmed.some(l => l)) return;
     const id = nextIdRef.current++;
     setMessages(prev => [...prev, { id, lines: trimmed }]);
-    setDraftLines(['', '', '', '', '']);
+    setDraftLines(['', '', '', '', '', '']);
     setAddingNew(false);
     boardRef.current?.displayMessage(trimmed);
     setActiveMsgId(id);
@@ -168,10 +171,6 @@ export default function App() {
     const onKeyDown = (e) => {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
       switch (e.key) {
-        case 'Enter':
-          e.preventDefault();
-          openAddNew();
-          break;
         case ' ':
         case 'ArrowRight':
           e.preventDefault();
@@ -201,28 +200,39 @@ export default function App() {
     };
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
-  }, [next, prev, toggleFullscreen, toggleMute, openAddNew, closePanel]);
+  }, [next, prev, toggleFullscreen, toggleMute, closePanel]);
+
+  // Compute board transform from scroll progress
+  const boardTranslateY = (1 - boardProgress) * 60; // percentage offset
+  const boardOpacity = Math.min(1, boardProgress * 1.5);
 
   return (
-    <div className="page-frame">
+    <div className="page-wrapper">
       <Header muted={muted} onVolumeClick={handleVolumeClick} />
-      <Hero onCtaClick={handleCtaClick} />
 
-      <section className="board-section" id="board-container">
-        <div className="wall-mount-wrapper">
-          <div className="mount-bracket mount-bracket-left" />
-          <div className="mount-bracket mount-bracket-right" />
+      <section className="hero-section">
+        <Hero />
+      </section>
+
+      <section className="board-section" id="board-container" ref={boardSectionRef}>
+        <div
+          className="board-reveal"
+          style={{
+            transform: `translateY(${boardTranslateY}%)`,
+            opacity: boardOpacity,
+          }}
+        >
           <div className="display-frame">
             <Board ref={boardRef} soundEngine={soundEngineRef.current} />
           </div>
-        </div>
 
-        <button className="messages-fab" onClick={openPanel} title="Manage messages">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-          </svg>
-          <span>Messages</span>
-        </button>
+          <button className="messages-fab" onClick={openPanel} title="Manage messages">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            <span>Messages</span>
+          </button>
+        </div>
       </section>
 
       {/* Messages panel */}
@@ -273,7 +283,7 @@ export default function App() {
                     onKeyDown={e => {
                       if (e.key === 'Enter') {
                         e.preventDefault();
-                        if (i < 4) {
+                        if (i < 5) {
                           e.currentTarget.closest('.add-form')
                             .querySelectorAll('.draft-input')[i + 1]?.focus();
                         } else {
@@ -282,13 +292,13 @@ export default function App() {
                       }
                       if (e.key === 'Escape') {
                         setAddingNew(false);
-                        setDraftLines(['', '', '', '', '']);
+                        setDraftLines(['', '', '', '', '', '']);
                       }
                     }}
                   />
                 ))}
                 <div className="add-form-actions">
-                  <button className="form-cancel" onClick={() => { setAddingNew(false); setDraftLines(['', '', '', '', '']); }}>Cancel</button>
+                  <button className="form-cancel" onClick={() => { setAddingNew(false); setDraftLines(['', '', '', '', '', '']); }}>Cancel</button>
                   <button className="form-save" onClick={addMessage}>Add</button>
                 </div>
               </div>
