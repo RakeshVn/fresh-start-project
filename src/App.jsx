@@ -36,22 +36,12 @@ export default function App() {
   const showPanelRef = useRef(false);
   useEffect(() => { showPanelRef.current = showPanel; }, [showPanel]);
 
-  // Scroll-driven board reveal
-  const boardSectionRef = useRef(null);
-  const [boardProgress, setBoardProgress] = useState(0);
+  // Scroll-driven board position
+  const [scrollY, setScrollY] = useState(0);
 
   useEffect(() => {
-    const onScroll = () => {
-      const section = boardSectionRef.current;
-      if (!section) return;
-      const rect = section.getBoundingClientRect();
-      const vh = window.innerHeight;
-      // progress: 0 when section top is at bottom of viewport, 1 when section top reaches top
-      const raw = 1 - rect.top / vh;
-      setBoardProgress(Math.max(0, Math.min(1, raw)));
-    };
+    const onScroll = () => setScrollY(window.scrollY);
     window.addEventListener('scroll', onScroll, { passive: true });
-    onScroll();
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
@@ -202,30 +192,32 @@ export default function App() {
     return () => document.removeEventListener('keydown', onKeyDown);
   }, [next, prev, toggleFullscreen, toggleMute, closePanel]);
 
-  // Compute board transform from scroll progress
-  const boardTranslateY = (1 - boardProgress) * 60; // percentage offset
-  const boardOpacity = Math.min(1, boardProgress * 1.5);
+  // Board slides from bottom 50% up to vertically center (covering hero)
+  // scrollY 0 → board at bottom half; scrollY = vh/2 → board centered
+  const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
+  const maxScroll = vh * 0.5;
+  const progress = Math.min(1, scrollY / maxScroll);
+  // Start: translateY(0) means bottom half. Move up by 25vh to center.
+  const boardTranslateY = (1 - progress) * 25; // vh units
 
   return (
     <div className="page-wrapper">
       <Header muted={muted} onVolumeClick={handleVolumeClick} />
 
-      <section className="hero-section">
-        <Hero />
-      </section>
-
-      <section className="board-section" id="board-container" ref={boardSectionRef}>
+      {/* Fixed layout: hero top 50%, board bottom 50% that slides up */}
+      <div className="split-container">
+        <div className="hero-half">
+          <Hero />
+        </div>
         <div
-          className="board-reveal"
+          className="board-half"
           style={{
-            transform: `translateY(${boardTranslateY}%)`,
-            opacity: boardOpacity,
+            transform: `translateY(-${boardTranslateY}vh)`,
           }}
         >
           <div className="display-frame">
             <Board ref={boardRef} soundEngine={soundEngineRef.current} />
           </div>
-
           <button className="messages-fab" onClick={openPanel} title="Manage messages">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
@@ -233,7 +225,10 @@ export default function App() {
             <span>Messages</span>
           </button>
         </div>
-      </section>
+      </div>
+
+      {/* Spacer to allow scrolling */}
+      <div className="scroll-spacer" />
 
       {/* Messages panel */}
       {showPanel && (
@@ -243,7 +238,6 @@ export default function App() {
               <h3>Messages</h3>
               <button className="panel-close" onClick={closePanel}>×</button>
             </div>
-
             <div className="msg-list">
               {messages.map(msg => (
                 <div
@@ -257,15 +251,10 @@ export default function App() {
                       {msg.lines.filter(l => l.trim()).join(' · ')}
                     </div>
                   </div>
-                  <button
-                    className="msg-item-delete"
-                    onClick={(e) => deleteMessage(msg.id, e)}
-                    title="Delete"
-                  >×</button>
+                  <button className="msg-item-delete" onClick={(e) => deleteMessage(msg.id, e)} title="Delete">×</button>
                 </div>
               ))}
             </div>
-
             {addingNew ? (
               <div className="add-form">
                 <h4>New message</h4>
@@ -284,8 +273,7 @@ export default function App() {
                       if (e.key === 'Enter') {
                         e.preventDefault();
                         if (i < 5) {
-                          e.currentTarget.closest('.add-form')
-                            .querySelectorAll('.draft-input')[i + 1]?.focus();
+                          e.currentTarget.closest('.add-form').querySelectorAll('.draft-input')[i + 1]?.focus();
                         } else {
                           addMessage();
                         }
@@ -303,9 +291,7 @@ export default function App() {
                 </div>
               </div>
             ) : (
-              <button className="add-new-btn" onClick={() => setAddingNew(true)}>
-                + New message
-              </button>
+              <button className="add-new-btn" onClick={() => setAddingNew(true)}>+ New message</button>
             )}
           </div>
         </div>
