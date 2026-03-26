@@ -98,12 +98,6 @@ const Board = forwardRef(({ soundEngine }, ref) => {
       className="board"
       style={{ '--grid-cols': cols, '--grid-rows': rows }}
     >
-      {/* Left accent bar */}
-      <div className="accent-bar accent-bar-left">
-        <div className="accent-segment" style={{ backgroundColor: accentColor }} />
-        <div className="accent-segment" style={{ backgroundColor: accentColor }} />
-      </div>
-
       {/* Tile grid */}
       <div className="tile-grid">
         {Array.from({ length: rows }, (_, r) =>
@@ -111,12 +105,6 @@ const Board = forwardRef(({ soundEngine }, ref) => {
             <Tile key={`${r}-${c}`} ref={tileRefs[r][c]} />
           ))
         )}
-      </div>
-
-      {/* Right accent bar */}
-      <div className="accent-bar accent-bar-right">
-        <div className="accent-segment" style={{ backgroundColor: accentColor }} />
-        <div className="accent-segment" style={{ backgroundColor: accentColor }} />
       </div>
 
       {/* Keyboard hint */}
