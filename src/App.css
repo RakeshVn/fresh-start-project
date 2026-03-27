@@ -361,6 +361,15 @@
   background: rgba(255, 255, 255, 0.09);
   outline: none;
 }
+.modal-add-form .draft-textarea {
+  background-color: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.85);
+}
+.modal-add-form .draft-textarea:focus {
+  border-color: rgba(255, 255, 255, 0.3);
+  outline: none;
+}
 
 .modal-add-new-btn {
   margin: 0 16px 16px !important;
@@ -588,6 +597,64 @@
 }
 .draft-input::placeholder { color: rgba(255,255,255,0.2); font-weight: 400; letter-spacing: 0; text-transform: none; }
 .draft-input:focus { border-color: rgba(255,255,255,0.3); outline: none; background: rgba(255,255,255,0.09); }
+
+.draft-textarea {
+  display: block;
+  width: 100%;
+  resize: vertical;
+  background-color: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 9px 10px;
+  font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.85);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 0;
+  line-height: 1.45;
+  transition: border-color 0.15s, background-color 0.15s;
+  box-sizing: border-box;
+}
+.draft-textarea::placeholder {
+  color: rgba(255,255,255,0.2);
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.draft-textarea:focus {
+  border-color: rgba(255,255,255,0.3);
+  outline: none;
+}
+.draft-textarea:not(.message-composer-textarea):focus {
+  background-color: rgba(255,255,255,0.09);
+}
+
+/* Default tall enough for ~6 lines; line-height matches row rhythm (panel + remote) */
+.message-composer-textarea {
+  --msg-row-height: 18px;
+  line-height: var(--msg-row-height);
+  min-height: calc(6 * var(--msg-row-height) + 18px);
+  padding: 9px 10px;
+  resize: vertical;
+  background-color: rgba(255, 255, 255, 0.06);
+}
+.message-composer-textarea:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.3);
+  background-color: rgba(255, 255, 255, 0.09);
+}
+.message-composer-hint {
+  font-size: 11px;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.38);
+  margin: 0 0 8px;
+}
+.message-composer-hint--remote {
+  color: rgba(255, 255, 255, 0.45);
+  margin-bottom: 10px;
+}
 
 .add-form-actions { display: flex; gap: 6px; margin-top: 8px; justify-content: flex-end; }
 .form-cancel {
@@ -1611,6 +1678,20 @@
 .rc-message-input::placeholder { color: rgba(255, 255, 255, 0.2); text-transform: none; letter-spacing: 0; font-weight: 400; }
 .rc-message-input:focus { border-color: rgba(255, 255, 255, 0.3); outline: none; }
 
+/* MessageComposer on remote: same 6-line min-height (must follow .rc-message-input so it wins) */
+.message-composer--remote .rc-message-input.message-composer-textarea {
+  --msg-row-height: 22px;
+  line-height: var(--msg-row-height);
+  min-height: calc(6 * var(--msg-row-height) + 24px);
+  resize: vertical;
+  background-color: rgba(255, 255, 255, 0.04);
+}
+.message-composer--remote .rc-message-input.message-composer-textarea:focus {
+  border-color: rgba(255, 255, 255, 0.3);
+  outline: none;
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
 /* Send button */
 .rc-send-row {
   display: flex;
@@ -1655,11 +1736,18 @@
 
 /* Badge */
 .rc-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  box-sizing: border-box;
   background: rgba(255, 255, 255, 0.1);
-  padding: 2px 8px;
-  border-radius: 10px;
+  border-radius: 9999px;
   font-size: 11px;
   font-weight: 700;
+  line-height: 1;
   color: rgba(255, 255, 255, 0.5);
 }
 
