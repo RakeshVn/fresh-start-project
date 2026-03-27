@@ -19,6 +19,35 @@ export const ACCENT_COLORS = [
   '#8B5CF6', '#C850C0'
 ];
 
+export const SCRAMBLE_EMOJIS = [
+  '😀','❤️','⭐','🔥','✨','💫','🎉','🎯','💡','🚀',
+  '🏆','💜','🌟','🎨','💎','🍀','🦋','🐬','🌈','☀️',
+  '⚡','🌊','🎵','🍕','👑','🦊','🌺','🎪','💥','🔮',
+];
+
+export const EMOJI_CATEGORIES = [
+  { label: 'Smileys', icon: '😀', emojis: ['😀','😊','😍','🤔','😎','🥳','🤩','😂','😢','😮','🥹','😴','🤗','🤭','😏','😤','🤯','🥺','😇','🤠','😈','👻','💀','🤖','👽'] },
+  { label: 'Hearts',  icon: '❤️', emojis: ['❤️','🧡','💛','💚','💙','💜','🖤','🤍','💖','💗','💝','💞','💕','❣️','💔','💓','💟','♥️','🫀','❤️‍🔥'] },
+  { label: 'Hands',   icon: '👋', emojis: ['👍','👋','🙌','💪','🫶','🤝','✌️','🤞','🫰','👌','🤌','🖐️','✋','🤙','👏','🙏','🤲','👊','✊','🤛','🤜','👈','👉','☝️','👆'] },
+  { label: 'Animals', icon: '🦊', emojis: ['🐶','🐱','🐭','🐰','🦊','🐻','🐼','🐨','🐯','🦁','🐮','🐷','🐸','🐙','🦋','🐬','🦄','🐧','🦅','🐝','🐢','🦎','🐍','🦖','🐳'] },
+  { label: 'Food',    icon: '🍕', emojis: ['🍎','🍊','🍋','🍇','🍓','🍕','🍔','🌮','☕','🍰','🍩','🍦','🎂','🧁','🥑','🍣','🥐','🍜','🥗','🧃','🥤','🍺','🍷','🧉','🍾'] },
+  { label: 'Objects', icon: '🚀', emojis: ['📌','📝','🎨','🎵','🔥','💡','⭐','🎯','🚀','🏆','🎉','✨','💬','🔮','🎪','🎭','🎬','📸','🎸','💎','🔑','💰','📱','💻','🖥️'] },
+  { label: 'Symbols', icon: '✨', emojis: ['✅','❌','⚠️','🔴','🟡','🟢','🔵','💯','🆕','🆒','♻️','⬆️','⬇️','▶️','⏸️','🔁','💥','🌀','⚡','🌊','❄️','🌈','☀️','🌙','⭐'] },
+];
+
+export function splitGraphemes(str) {
+  if (typeof Intl !== 'undefined' && typeof Intl.Segmenter !== 'undefined') {
+    const seg = new Intl.Segmenter();
+    return [...seg.segment(str)].map(s => s.segment);
+  }
+  return [...str];
+}
+
+export function isEmojiChar(char) {
+  if (!char || char === ' ') return false;
+  return /\p{Extended_Pictographic}/u.test(char);
+}
+
 export const MESSAGES = [
   [
     '',

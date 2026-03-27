@@ -2,24 +2,59 @@ import { useRef, useState, useEffect, useCallback } from 'react';
 import Board from './components/Board';
 import Header from './components/Header';
 import Hero from './components/Hero';
+import TVMode from './components/TVMode';
+import MobileMode from './components/MobileMode';
 import { SoundEngine } from './SoundEngine';
-import { MESSAGES, MESSAGE_INTERVAL, TOTAL_TRANSITION, CHARSET } from './constants';
+import { MESSAGES, MESSAGE_INTERVAL, TOTAL_TRANSITION, CHARSET, splitGraphemes, isEmojiChar, EMOJI_CATEGORIES } from './constants';
+import { detectDevice } from './deviceDetection';
 import './App.css';
 
 const VALID_CHARS = new Set(CHARSET);
-const filterLine = (s) =>
-  s.toUpperCase().split('').filter(c => VALID_CHARS.has(c)).join('').slice(0, 22);
+const filterLine = (s) => {
+  const graphemes = splitGraphemes(s.toUpperCase());
+  return graphemes.filter(g => VALID_CHARS.has(g) || isEmojiChar(g)).slice(0, 22).join('');
+};
 
 const msgLabel = (lines) => lines.find(l => l.trim()) || 'Message';
 
-const EMOJIS = [
-  '😀','😊','😍','🤔','😎','🥳','🤩','😂',
-  '👍','👋','🙌','💪','👀','🫶','🤝','✌️',
-  '🎉','✨','🔥','💡','⭐','🎯','🚀','🏆',
-  '❤️','💬','📌','📝','🎨','🎵','☕','🌟',
-];
-
 export default function App() {
+  const [mode, setMode] = useState(() => detectDevice());
+  const [tvModeForced, setTvModeForced] = useState(false);
+
+  // Listen for resize to update mode detection
+  useEffect(() => {
+    function onResize() {
+      if (!tvModeForced) {
+        setMode(detectDevice());
+      }
+    }
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, [tvModeForced]);
+
+  // Mobile mode
+  if (mode === 'mobile') {
+    return <MobileMode />;
+  }
+
+  // TV mode (auto-detected or forced)
+  if (mode === 'tv' || tvModeForced) {
+    return (
+      <TVMode
+        onExitTV={() => {
+          setTvModeForced(false);
+          setMode('desktop');
+        }}
+      />
+    );
+  }
+
+  // Desktop mode — original UI with TV Mode toggle
+  return <DesktopMode onEnterTV={() => setTvModeForced(true)} />;
+}
+
+// ── Desktop Mode (original UI) ──────────────────────────────────────────
+function DesktopMode({ onEnterTV }) {
   const boardRef = useRef(null);
   const soundEngineRef = useRef(new SoundEngine());
   const [muted, setMuted] = useState(false);
@@ -48,6 +83,10 @@ export default function App() {
   const [draftLines, setDraftLines] = useState(['', '', '', '', '', '']);
   const [draftEmoji, setDraftEmoji] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [emojiCategory, setEmojiCategory] = useState(0);
+  const [emojiPickerMode, setEmojiPickerMode] = useState('label'); // 'label' | 'insert'
+  const rowInputRefs = useRef([null, null, null, null, null, null]);
+  const focusedRowRef = useRef(-1);
   const showPanelRef = useRef(false);
   const showShortcutsRef = useRef(false);
   const showModalRef = useRef(false);
@@ -123,11 +162,33 @@ export default function App() {
     setAddingNew(false);
   }, []);
 
+  const handleEmojiSelect = useCallback((emoji) => {
+    if (emojiPickerMode === 'insert') {
+      const row = focusedRowRef.current >= 0 ? focusedRowRef.current : 0;
+      const inputEl = rowInputRefs.current[row];
+      const cursorPos = inputEl?.selectionStart ?? (draftLines[row]?.length ?? 0);
+      const before = (draftLines[row] ?? '').slice(0, cursorPos);
+      const after = (draftLines[row] ?? '').slice(cursorPos);
+      const newVal = filterLine(before + emoji + after);
+      const newCursor = before.length + emoji.length;
+      setDraftLines(prev => prev.map((v, j) => j === row ? newVal : v));
+      setTimeout(() => {
+        const el = rowInputRefs.current[row];
+        if (el) { el.focus(); el.setSelectionRange(newCursor, newCursor); }
+      }, 0);
+      // Keep picker open for multi-insert
+    } else {
+      setDraftEmoji(emoji);
+      setShowEmojiPicker(false);
+    }
+  }, [emojiPickerMode, draftLines]);
+
   const resetDraft = useCallback(() => {
     setDraftLines(['', '', '', '', '', '']);
     setDraftEmoji('');
     setShowEmojiPicker(false);
     setAddingNew(false);
+    focusedRowRef.current = -1;
   }, []);
 
   const closePanel = useCallback(() => {
@@ -220,6 +281,16 @@ export default function App() {
     <div className="page-wrapper">
       <Header muted={muted} onVolumeClick={handleVolumeClick} />
 
+      {/* TV Mode toggle button */}
+      <button className="tv-mode-toggle" onClick={onEnterTV} title="Enter TV Mode">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+          <line x1="8" y1="21" x2="16" y2="21"/>
+          <line x1="12" y1="17" x2="12" y2="21"/>
+        </svg>
+        <span>TV Mode</span>
+      </button>
+
       <div className="single-screen">
         <div className="hero-area">
           <Hero />
@@ -267,24 +338,57 @@ export default function App() {
                     {addingNew ? (
                       <div className="add-form">
                         <div className="add-form-header">
-                          <span className="popup-section-label" style={{padding: 0}}>New message</span>
-                          <div className="emoji-field">
-                            <button className="emoji-trigger" onClick={() => setShowEmojiPicker(v => !v)}>
+                          <div className="form-title-group">
+                            <button
+                              className="emoji-trigger label-emoji-btn"
+                              onClick={() => { setEmojiPickerMode('label'); setShowEmojiPicker(v => !v); }}
+                              title="Set message label emoji"
+                            >
                               {draftEmoji || <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 13s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/></svg>}
                             </button>
-                            {draftEmoji && <button className="emoji-clear" onClick={() => setDraftEmoji('')}>×</button>}
+                            <span className="popup-section-label" style={{padding: 0}}>New message</span>
                           </div>
+                          <button
+                            className="emoji-trigger"
+                            onClick={() => { setEmojiPickerMode('insert'); setShowEmojiPicker(v => !v); }}
+                            title="Insert emoji into text"
+                          >
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 13s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/><line x1="12" y1="5" x2="12" y2="8"/><line x1="10.5" y1="6.5" x2="13.5" y2="6.5"/></svg>
+                          </button>
                         </div>
+                        {draftEmoji && <button className="emoji-clear" onClick={() => setDraftEmoji('')}>×</button>}
                         {showEmojiPicker && (
-                          <div className="emoji-grid">
-                            {EMOJIS.map(e => (
-                              <button key={e} className="emoji-opt" onClick={() => { setDraftEmoji(e); setShowEmojiPicker(false); }}>{e}</button>
-                            ))}
+                          <div className="emoji-picker">
+                            <div className="emoji-tabs">
+                              {EMOJI_CATEGORIES.map((cat, i) => (
+                                <button
+                                  key={cat.label}
+                                  className={`emoji-tab${emojiCategory === i ? ' active' : ''}`}
+                                  onMouseDown={e => { e.preventDefault(); setEmojiCategory(i); }}
+                                  title={cat.label}
+                                >
+                                  {cat.icon}
+                                </button>
+                              ))}
+                            </div>
+                            <div className="emoji-grid">
+                              {EMOJI_CATEGORIES[emojiCategory].emojis.map(e => (
+                                <button
+                                  key={e}
+                                  className="emoji-opt"
+                                  onMouseDown={e2 => { e2.preventDefault(); handleEmojiSelect(e); }}
+                                >
+                                  {e}
+                                </button>
+                              ))}
+                            </div>
                           </div>
                         )}
                         {draftLines.map((line, i) => (
                           <input
                             key={i}
+                            ref={el => { rowInputRefs.current[i] = el; }}
+                            onFocus={() => { focusedRowRef.current = i; }}
                             className="draft-input"
                             value={line}
                             placeholder={`Row ${i + 1}`}
@@ -375,24 +479,57 @@ export default function App() {
               {addingNew ? (
                 <div className="add-form modal-add-form">
                   <div className="add-form-header">
-                    <div className="modal-form-label" style={{margin: 0}}>New message</div>
-                    <div className="emoji-field">
-                      <button className="emoji-trigger" onClick={() => setShowEmojiPicker(v => !v)}>
+                    <div className="form-title-group">
+                      <button
+                        className="emoji-trigger label-emoji-btn"
+                        onClick={() => { setEmojiPickerMode('label'); setShowEmojiPicker(v => !v); }}
+                        title="Set message label emoji"
+                      >
                         {draftEmoji || <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 13s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/></svg>}
                       </button>
-                      {draftEmoji && <button className="emoji-clear" onClick={() => setDraftEmoji('')}>×</button>}
+                      <span className="popup-section-label" style={{padding: 0}}>New message</span>
                     </div>
+                    <button
+                      className="emoji-trigger"
+                      onClick={() => { setEmojiPickerMode('insert'); setShowEmojiPicker(v => !v); }}
+                      title="Insert emoji into text"
+                    >
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 13s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/><line x1="12" y1="5" x2="12" y2="8"/><line x1="10.5" y1="6.5" x2="13.5" y2="6.5"/></svg>
+                    </button>
                   </div>
+                  {draftEmoji && <button className="emoji-clear" onClick={() => setDraftEmoji('')}>×</button>}
                   {showEmojiPicker && (
-                    <div className="emoji-grid">
-                      {EMOJIS.map(e => (
-                        <button key={e} className="emoji-opt" onClick={() => { setDraftEmoji(e); setShowEmojiPicker(false); }}>{e}</button>
-                      ))}
+                    <div className="emoji-picker">
+                      <div className="emoji-tabs">
+                        {EMOJI_CATEGORIES.map((cat, i) => (
+                          <button
+                            key={cat.label}
+                            className={`emoji-tab${emojiCategory === i ? ' active' : ''}`}
+                            onMouseDown={e => { e.preventDefault(); setEmojiCategory(i); }}
+                            title={cat.label}
+                          >
+                            {cat.icon}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="emoji-grid">
+                        {EMOJI_CATEGORIES[emojiCategory].emojis.map(e => (
+                          <button
+                            key={e}
+                            className="emoji-opt"
+                            onMouseDown={e2 => { e2.preventDefault(); handleEmojiSelect(e); }}
+                          >
+                            {e}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   )}
                   {draftLines.map((line, i) => (
                     <input
                       key={i}
+                      ref={el => { rowInputRefs.current[i] = el; }}
+                      onFocus={() => { focusedRowRef.current = i; }}
                       className="draft-input"
                       value={line}
                       placeholder={`Row ${i + 1}`}

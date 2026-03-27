@@ -1,5 +1,5 @@
 import React, { forwardRef, useRef, useImperativeHandle } from 'react';
-import { CHARSET, SCRAMBLE_COLORS, FLIP_DURATION } from '../constants';
+import { CHARSET, SCRAMBLE_COLORS, FLIP_DURATION, SCRAMBLE_EMOJIS, isEmojiChar } from '../constants';
 
 const Tile = forwardRef((props, ref) => {
   const elRef = useRef(null);
@@ -14,6 +14,7 @@ const Tile = forwardRef((props, ref) => {
       currentCharRef.current = char;
       if (frontSpanRef.current) {
         frontSpanRef.current.textContent = char === ' ' ? '' : char;
+        frontSpanRef.current.classList.toggle('emoji-char', isEmojiChar(char));
       }
       if (frontElRef.current) {
         frontElRef.current.style.backgroundColor = '';
@@ -28,6 +29,8 @@ const Tile = forwardRef((props, ref) => {
         scrambleTimerRef.current = null;
       }
 
+      const useEmojiScramble = isEmojiChar(targetChar) || isEmojiChar(currentCharRef.current);
+
       setTimeout(() => {
         elRef.current?.classList.add('scrambling');
         let scrambleCount = 0;
@@ -35,9 +38,12 @@ const Tile = forwardRef((props, ref) => {
         const scrambleInterval = 70;
 
         scrambleTimerRef.current = setInterval(() => {
-          const randChar = CHARSET[Math.floor(Math.random() * CHARSET.length)];
+          const randChar = useEmojiScramble
+            ? SCRAMBLE_EMOJIS[Math.floor(Math.random() * SCRAMBLE_EMOJIS.length)]
+            : CHARSET[Math.floor(Math.random() * CHARSET.length)];
           if (frontSpanRef.current) {
             frontSpanRef.current.textContent = randChar === ' ' ? '' : randChar;
+            frontSpanRef.current.classList.toggle('emoji-char', isEmojiChar(randChar));
           }
 
           const color = SCRAMBLE_COLORS[scrambleCount % SCRAMBLE_COLORS.length];
@@ -63,6 +69,7 @@ const Tile = forwardRef((props, ref) => {
             if (frontSpanRef.current) {
               frontSpanRef.current.style.color = '';
               frontSpanRef.current.textContent = targetChar === ' ' ? '' : targetChar;
+              frontSpanRef.current.classList.toggle('emoji-char', isEmojiChar(targetChar));
             }
 
             if (innerElRef.current) {

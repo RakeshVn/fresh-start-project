@@ -13,6 +13,7 @@ import {
   STAGGER_DELAY,
   TOTAL_TRANSITION,
   ACCENT_COLORS,
+  splitGraphemes,
 } from '../constants';
 
 const Board = forwardRef(({ soundEngine }, ref) => {
@@ -37,13 +38,15 @@ const Board = forwardRef(({ soundEngine }, ref) => {
     (lines) => {
       return Array.from({ length: rows }, (_, r) => {
         const line = (lines[r] || '').toUpperCase();
-        const padTotal = cols - line.length;
+        const graphemes = splitGraphemes(line);
+        const padTotal = cols - graphemes.length;
         const padLeft = Math.max(0, Math.floor(padTotal / 2));
-        const padded =
-          ' '.repeat(padLeft) +
-          line +
-          ' '.repeat(Math.max(0, cols - padLeft - line.length));
-        return padded.split('');
+        const padRight = Math.max(0, cols - padLeft - graphemes.length);
+        return [
+          ...Array(padLeft).fill(' '),
+          ...graphemes,
+          ...Array(padRight).fill(' '),
+        ];
       });
     },
     [rows, cols]
