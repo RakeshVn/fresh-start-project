@@ -61,6 +61,7 @@ export default function App() {
   // Desktop + mobile homepage — same UI; Pair Device opens TV mode or mobile pairing
   return (
     <DesktopMode
+      isMobile={mode === 'mobile'}
       onPairDevice={
         mode === 'mobile'
           ? () => setMobilePairingOpen(true)
@@ -71,7 +72,7 @@ export default function App() {
 }
 
 // ── Desktop Mode (original UI) ──────────────────────────────────────────
-function DesktopMode({ onPairDevice }) {
+function DesktopMode({ onPairDevice, isMobile }) {
   const boardRef = useRef(null);
   const soundEngineRef = useRef(new SoundEngine());
   const [muted, setMuted] = useState(false);
@@ -109,6 +110,9 @@ function DesktopMode({ onPairDevice }) {
   const showModalRef = useRef(false);
   useEffect(() => { showPanelRef.current = showPanel; }, [showPanel]);
   useEffect(() => { showShortcutsRef.current = showShortcuts; }, [showShortcuts]);
+  useEffect(() => {
+    if (isMobile) setShowShortcuts(false);
+  }, [isMobile]);
   useEffect(() => { showModalRef.current = showModal; }, [showModal]);
 
 
@@ -418,25 +422,27 @@ function DesktopMode({ onPairDevice }) {
               )}
             </div>
 
-            {/* Info / shortcuts popup */}
-            <div className="popup-wrap">
-              <button className="ctrl-btn" title="Shortcuts" onClick={() => setShowShortcuts(v => !v)}>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3" />
-                </svg>
-              </button>
-              {showShortcuts && (
-                <>
-                  <div className="popup-backdrop" onClick={() => setShowShortcuts(false)} />
-                  <div className="popup shortcuts-popup">
-                    <div className="popup-section-label">Shortcuts</div>
-                    <div className="shortcut-row"><span>Messages</span><kbd>B</kbd></div>
-                    <div className="shortcut-row"><span>Fullscreen</span><kbd>F</kbd></div>
-                    <div className="shortcut-row"><span>Mute</span><kbd>M</kbd></div>
-                  </div>
-                </>
-              )}
-            </div>
+            {/* Info / shortcuts popup (desktop / tablet only) */}
+            {!isMobile && (
+              <div className="popup-wrap">
+                <button type="button" className="ctrl-btn" title="Shortcuts" onClick={() => setShowShortcuts(v => !v)}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3" />
+                  </svg>
+                </button>
+                {showShortcuts && (
+                  <>
+                    <div className="popup-backdrop" onClick={() => setShowShortcuts(false)} />
+                    <div className="popup shortcuts-popup">
+                      <div className="popup-section-label">Shortcuts</div>
+                      <div className="shortcut-row"><span>Messages</span><kbd>B</kbd></div>
+                      <div className="shortcut-row"><span>Fullscreen</span><kbd>F</kbd></div>
+                      <div className="shortcut-row"><span>Mute</span><kbd>M</kbd></div>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         </div>
         </div>
