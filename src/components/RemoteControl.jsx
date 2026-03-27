@@ -63,16 +63,17 @@ export default function RemoteControl({ pairingId, deviceId, onDisconnect }) {
   useEffect(() => {
     if (!showEmojiPicker) return;
     function handleClick(e) {
-      if (emojiPickerRef.current && !emojiPickerRef.current.contains(e.target) &&
-          !e.target.closest('.rc-emoji-btn')) {
-        setShowEmojiPicker(false);
-      }
+      // Don't close if clicking inside picker, emoji button, send row, or textarea
+      if (emojiPickerRef.current && emojiPickerRef.current.contains(e.target)) return;
+      if (e.target.closest('.rc-emoji-btn')) return;
+      if (e.target.closest('.rc-send-row')) return;
+      if (e.target.closest('.rc-message-input')) return;
+      setShowEmojiPicker(false);
     }
-    document.addEventListener('mousedown', handleClick);
-    document.addEventListener('touchstart', handleClick);
+    // Use click (not mousedown) so it doesn't steal from button events
+    document.addEventListener('click', handleClick);
     return () => {
-      document.removeEventListener('mousedown', handleClick);
-      document.removeEventListener('touchstart', handleClick);
+      document.removeEventListener('click', handleClick);
     };
   }, [showEmojiPicker]);
 

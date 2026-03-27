@@ -83,13 +83,13 @@ export default function TVMode({ onExitTV }) {
     soundEngineRef.current.resume();
   }, []);
 
-  const displayOnBoard = useCallback((lines) => {
+  const displayOnBoard = useCallback((lines, force = false) => {
     if (!boardRef.current) {
       // Board not mounted yet — queue the command
       pendingCommandRef.current = lines;
       return;
     }
-    if (boardRef.current.isTransitioning) return;
+    if (!force && boardRef.current.isTransitioning) return;
     boardRef.current.displayMessage(lines);
     if (soundOn) soundEngineRef.current.playTransition();
   }, [soundOn]);
@@ -277,6 +277,13 @@ export default function TVMode({ onExitTV }) {
     return () => clearInterval(rotatorRef.current);
   }, [paired, displayOnBoard]);
 
+  // Enter fullscreen when paired
+  useEffect(() => {
+    if (paired && !document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    }
+  }, [paired]);
+
   // Auto-mode handlers
   function clearAutoMode() {
     clearInterval(modeIntervalRef.current);
@@ -298,10 +305,17 @@ export default function TVMode({ onExitTV }) {
   function startClockMode() {
     clearAutoMode();
     setActiveMode('clock');
-    displayOnBoard(getClockLines());
+    displayOnBoard(getClockLines(), true);
+
+    // Check every 5 seconds; only push update when the minute actually changes
+    let lastMinute = new Date().getMinutes();
     modeIntervalRef.current = setInterval(() => {
-      displayOnBoard(getClockLines());
-    }, 60000);
+      const now = new Date();
+      if (now.getMinutes() !== lastMinute) {
+        lastMinute = now.getMinutes();
+        displayOnBoard(getClockLines(), true);
+      }
+    }, 5000);
   }
 
   // Exit TV mode on Escape key
