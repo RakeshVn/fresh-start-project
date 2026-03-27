@@ -6,7 +6,7 @@ import TVMode from './components/TVMode';
 import MobileMode from './components/MobileMode';
 import MessageComposer, { linesToDraftText } from './components/MessageComposer';
 import { SoundEngine } from './SoundEngine';
-import { MESSAGES, MESSAGE_INTERVAL, TOTAL_TRANSITION, CHARSET, splitGraphemes, isEmojiChar, getClockLines } from './constants';
+import { MESSAGES, HOME_MESSAGE_PAUSE_MS, TOTAL_TRANSITION, CHARSET, splitGraphemes, isEmojiChar, getClockLines } from './constants';
 import { detectDevice } from './deviceDetection';
 import './App.css';
 
@@ -139,7 +139,7 @@ function DesktopMode({ onPairDevice }) {
     clearInterval(rotatorTimerRef.current);
     rotatorTimerRef.current = setInterval(() => {
       if (!boardRef.current?.isTransitioning) advance(1);
-    }, MESSAGE_INTERVAL + TOTAL_TRANSITION);
+    }, HOME_MESSAGE_PAUSE_MS + TOTAL_TRANSITION);
   }, [advance]);
 
   const next = useCallback(() => { advance(1); resetTimer(); }, [advance, resetTimer]);
@@ -253,7 +253,7 @@ function DesktopMode({ onPairDevice }) {
     advance(1);
     rotatorTimerRef.current = setInterval(() => {
       if (!boardRef.current?.isTransitioning) advance(1);
-    }, MESSAGE_INTERVAL + TOTAL_TRANSITION);
+    }, HOME_MESSAGE_PAUSE_MS + TOTAL_TRANSITION);
     return () => clearInterval(rotatorTimerRef.current);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 

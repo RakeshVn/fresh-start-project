@@ -116,7 +116,7 @@
   font-family: 'Instrument Serif', Georgia, serif;
   font-size: clamp(17px, 3.35vw, 48px);
   font-weight: 700;
-  letter-spacing: -1.5px;
+  letter-spacing: 0;
   line-height: 1.15;
   margin: 0 auto 10px;
   color: #1a1a1a;
@@ -866,7 +866,7 @@
   .single-screen { --header-offset: 64px; }
   .single-screen-stack { padding-left: 16px; padding-right: 16px; }
   .header-logo { font-size: 20px; }
-  .hero h1 { font-size: clamp(15px, 3.9vw, 26px); letter-spacing: -0.5px; }
+  .hero h1 { font-size: clamp(15px, 3.9vw, 26px); letter-spacing: 0; }
   .accent-bar { display: none; }
   .keyboard-hint { display: none; }
   .display-frame { padding: 8px 10px 10px; }
@@ -880,7 +880,7 @@
     max-width: 100%;
     padding: 0 12px;
     font-size: clamp(20px, 5.6vw, 32px);
-    letter-spacing: -0.6px;
+    letter-spacing: 0;
     line-height: 1.2;
   }
   .hero .subtitle {

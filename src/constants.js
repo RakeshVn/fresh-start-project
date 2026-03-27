@@ -6,6 +6,8 @@ export const FLIP_DURATION = 300;
 export const STAGGER_DELAY = 25;
 export const TOTAL_TRANSITION = 3800;
 export const MESSAGE_INTERVAL = 4000;
+/** Pause between board messages on the homepage (desktop/mobile site) before the next flip. */
+export const HOME_MESSAGE_PAUSE_MS = 2000;
 
 export const CHARSET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.,-!?\'/: ';
 
