@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { sendCommand, disconnect, getPairingStatus, subscribeToEvents } from '../api';
 import { CHARSET, splitGraphemes, isEmojiChar } from '../constants';
-import MessageComposer, { draftTextToLines } from './MessageComposer';
+import MessageComposer, { draftTextToLines, linesToDraftText } from './MessageComposer';
 
 const VALID_CHARS = new Set(CHARSET);
 const filterLine = (s) => {
@@ -54,6 +54,8 @@ export default function RemoteControl({ pairingId, deviceId, onDisconnect }) {
     } catch { return []; }
   });
   const [showSaved, setShowSaved] = useState(false);
+  const [editingSavedIndex, setEditingSavedIndex] = useState(null);
+  const [savedEditDraft, setSavedEditDraft] = useState('');
   const [activeSection, setActiveSection] = useState('message'); // message, quick, settings
 
   // Settings
@@ -130,9 +132,45 @@ export default function RemoteControl({ pairingId, deviceId, onDisconnect }) {
   }
 
   function deleteSaved(index) {
-    const next = savedMessages.filter((_, i) => i !== index);
-    setSavedMessages(next);
-    localStorage.setItem('flapstr_saved_msgs', JSON.stringify(next));
+    setEditingSavedIndex((ei) => {
+      if (ei === index) return null;
+      if (ei !== null && ei > index) return ei - 1;
+      return ei;
+    });
+    setSavedMessages((prev) => {
+      const next = prev.filter((_, i) => i !== index);
+      localStorage.setItem('flapstr_saved_msgs', JSON.stringify(next));
+      return next;
+    });
+  }
+
+  function startEditSaved(index) {
+    const msg = savedMessages[index];
+    if (!msg) return;
+    setEditingSavedIndex(index);
+    setSavedEditDraft(linesToDraftText(msg.lines));
+  }
+
+  function cancelEditSaved() {
+    setEditingSavedIndex(null);
+    setSavedEditDraft('');
+  }
+
+  function commitEditSaved() {
+    if (editingSavedIndex === null) return;
+    if (!savedEditDraft.trim()) return;
+    const lines = draftTextToLines(savedEditDraft, filterLine);
+    if (!lines.some((l) => l.trim())) return;
+    const label = lines.find((l) => l.trim()) || 'Message';
+    const idx = editingSavedIndex;
+    setSavedMessages((prev) => {
+      const next = [...prev];
+      next[idx] = { lines, label };
+      localStorage.setItem('flapstr_saved_msgs', JSON.stringify(next));
+      return next;
+    });
+    setEditingSavedIndex(null);
+    setSavedEditDraft('');
   }
 
   function updateSetting(key, value) {
@@ -260,15 +298,50 @@ export default function RemoteControl({ pairingId, deviceId, onDisconnect }) {
                 {showSaved && (
                   <div className="rc-saved-list">
                     {savedMessages.map((msg, i) => (
-                      <div key={i} className="rc-saved-item">
-                        <button className="rc-saved-send" onClick={() => sendQuickMessage(msg.lines)}>
-                          {msg.label}
-                        </button>
-                        <button className="rc-saved-delete" onClick={() => deleteSaved(i)}>
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M18 6L6 18M6 6l12 12"/>
-                          </svg>
-                        </button>
+                      <div key={i} className="rc-saved-item-wrap">
+                        {editingSavedIndex === i ? (
+                          <div className="rc-saved-edit">
+                            <MessageComposer
+                              variant="remote"
+                              title="Edit saved message"
+                              value={savedEditDraft}
+                              onChange={setSavedEditDraft}
+                              filterLine={filterLine}
+                              footer={
+                                <div className="rc-send-row">
+                                  <button type="button" className="form-cancel" onClick={cancelEditSaved}>
+                                    Cancel
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="rc-send-btn rc-send-btn-sm"
+                                    onClick={commitEditSaved}
+                                    disabled={!savedEditDraft.trim()}
+                                  >
+                                    Save
+                                  </button>
+                                </div>
+                              }
+                            />
+                          </div>
+                        ) : (
+                          <div className="rc-saved-item">
+                            <button type="button" className="rc-saved-send" onClick={() => sendQuickMessage(msg.lines)}>
+                              {msg.label}
+                            </button>
+                            <button type="button" className="rc-saved-edit-btn" onClick={() => startEditSaved(i)} title="Edit">
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                              </svg>
+                            </button>
+                            <button type="button" className="rc-saved-delete" onClick={() => deleteSaved(i)} title="Delete">
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M18 6L6 18M6 6l12 12" />
+                              </svg>
+                            </button>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>

@@ -1758,6 +1758,17 @@
   gap: 4px;
   margin-top: 8px;
 }
+.rc-saved-item-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.rc-saved-edit {
+  margin-top: 2px;
+}
+.rc-saved-edit .message-composer {
+  width: 100%;
+}
 .rc-saved-item {
   display: flex;
   align-items: center;
@@ -1777,6 +1788,20 @@
   transition: background 0.15s;
 }
 .rc-saved-send:hover { background: rgba(255, 255, 255, 0.08); }
+.rc-saved-edit-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.rc-saved-edit-btn:hover { color: rgba(255, 255, 255, 0.75); }
 .rc-saved-delete {
   width: 28px;
   height: 28px;

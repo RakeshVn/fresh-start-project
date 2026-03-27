@@ -7,6 +7,12 @@ export function draftTextToLines(text, filterLine) {
   return lines;
 }
 
+export function linesToDraftText(lines) {
+  const l = Array.isArray(lines) ? [...lines] : [];
+  while (l.length < 6) l.push('');
+  return l.slice(0, 6).join('\n');
+}
+
 export function filterMultilineDraft(text, filterLine) {
   return text
     .split('\n')
