@@ -3,7 +3,7 @@ import Board from './Board';
 import PairingCode from './PairingCode';
 import { SoundEngine } from '../SoundEngine';
 import { MESSAGES, MESSAGE_INTERVAL, TOTAL_TRANSITION, CHARSET, SCRAMBLE_DURATION, FLIP_DURATION, STAGGER_DELAY } from '../constants';
-import { createPairing, refreshPairing, subscribeToEvents } from '../api';
+import { createPairing, refreshPairing, subscribeToEvents, getPairingStatus } from '../api';
 
 const VALID_CHARS = new Set(CHARSET);
 const filterLine = (s) =>
@@ -48,6 +48,7 @@ export default function TVMode({ onExitTV }) {
   const [tvSessionId, setTvSessionId] = useState(null);
   const [code, setCode] = useState(null);
   const [paired, setPaired] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
   const [connectedCount, setConnectedCount] = useState(0);
   const [secondsLeft, setSecondsLeft] = useState(300);
 
@@ -121,8 +122,14 @@ export default function TVMode({ onExitTV }) {
     const es = subscribeToEvents(pairingId, (data) => {
       switch (data.type) {
         case 'device_connected':
-          setPaired(true);
           setConnectedCount(data.payload.count);
+          if (!paired) {
+            setShowConfetti(true);
+            setTimeout(() => {
+              setPaired(true);
+              setTimeout(() => setShowConfetti(false), 3000);
+            }, 800);
+          }
           break;
         case 'device_disconnected':
           setConnectedCount(data.payload.count);
@@ -168,6 +175,25 @@ export default function TVMode({ onExitTV }) {
 
     return () => es.close();
   }, [pairingId, displayOnBoard]);
+
+  // Polling fallback — in case SSE misses the device_connected event
+  useEffect(() => {
+    if (paired || !pairingId) return;
+    const poll = setInterval(async () => {
+      try {
+        const status = await getPairingStatus(pairingId);
+        if (status.connectedDevices > 0) {
+          setConnectedCount(status.connectedDevices);
+          setShowConfetti(true);
+          setTimeout(() => {
+            setPaired(true);
+            setTimeout(() => setShowConfetti(false), 3000);
+          }, 800);
+        }
+      } catch { /* ignore */ }
+    }, 4000);
+    return () => clearInterval(poll);
+  }, [paired, pairingId]);
 
   // Countdown timer for code refresh
   useEffect(() => {
@@ -266,8 +292,28 @@ export default function TVMode({ onExitTV }) {
 
   return (
     <div className="tv-mode" style={{ '--tv-accent-color': accentColor }}>
+      {/* Confetti celebration */}
+      {showConfetti && (
+        <div className="tv-confetti-overlay">
+          {Array.from({ length: 60 }).map((_, i) => (
+            <div
+              key={i}
+              className="tv-confetti-piece"
+              style={{
+                '--x': `${Math.random() * 100}vw`,
+                '--delay': `${Math.random() * 0.8}s`,
+                '--duration': `${1.5 + Math.random() * 2}s`,
+                '--rotation': `${Math.random() * 720 - 360}deg`,
+                '--color': ['#C850C0', '#4158D0', '#FBDA61', '#22C55E', '#F43F5E', '#3B82F6'][i % 6],
+              }}
+            />
+          ))}
+          <div className="tv-confetti-text">Connected!</div>
+        </div>
+      )}
+
       {/* Before pairing: centered logo + code */}
-      {!paired && (
+      {!paired && !showConfetti && (
         <div className="tv-pairing-screen">
           <div className="tv-logo">Flapstr.</div>
           {code && <PairingCode code={code} secondsLeft={secondsLeft} />}
