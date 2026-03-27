@@ -24,20 +24,42 @@
   letter-spacing: -0.5px;
 }
 
-.volume-icon {
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.7);
+  gap: 6px;
+  background: rgba(26, 26, 26, 0.06);
   backdrop-filter: blur(10px);
-  color: #666;
-  padding: 8px;
-  border-radius: 50%;
+  border: none;
+  color: rgba(26, 26, 26, 0.45);
+  padding: 8px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
   transition: color 0.2s, background 0.2s;
 }
-.volume-icon:hover { color: #000; background: rgba(255, 255, 255, 0.9); }
+.header-btn:hover { color: #1a1a1a; background: rgba(26, 26, 26, 0.1); }
+
+.header-btn span {
+  letter-spacing: 0.2px;
+}
+
+.volume-icon.muted { color: rgba(26, 26, 26, 0.25); }
 .volume-icon.muted svg path:last-child,
 .volume-icon.muted svg path:nth-child(2) { display: none; }
+
+/* Volume icon — no text label, keep circular */
+.volume-icon { padding: 8px; border-radius: 50%; }
+.volume-icon span { display: none; }
 
 /* ── Single Screen Layout ── */
 .single-screen {
@@ -776,30 +798,10 @@
   --tile-size: clamp(12px, calc((100cqi - 120px - 21 * var(--tile-gap)) / 22), 80px);
 }
 
-/* ── TV Mode Toggle Button ── */
-.tv-mode-toggle {
-  position: fixed;
-  top: 24px;
-  right: 100px;
-  z-index: 101;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  background: rgba(26, 26, 26, 0.8);
-  backdrop-filter: blur(10px);
-  border: none;
-  border-radius: 20px;
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s, color 0.2s;
-}
-.tv-mode-toggle:hover { background: rgba(26, 26, 26, 0.95); color: #fff; }
+/* ── TV Mode Toggle Button (inside header) ── */
 @media (max-width: 600px) {
   .tv-mode-toggle span { display: none; }
-  .tv-mode-toggle { right: 56px; padding: 8px; }
+  .tv-mode-toggle { padding: 8px; border-radius: 50%; }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -832,15 +834,30 @@
   --tile-size: clamp(12px, calc((100cqi - 120px - 21 * var(--tile-gap)) / 22), 80px);
 }
 
-/* Pairing Code (bottom-left overlay) */
-.pairing-code-wrap {
-  position: fixed;
-  bottom: 32px;
-  left: 32px;
-  z-index: 50;
+/* TV Pairing Screen — centered logo + code */
+.tv-pairing-screen {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  gap: 48px;
+  width: 100%;
+  height: 100%;
+}
+.tv-logo {
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-size: clamp(48px, 6vw, 80px);
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+  letter-spacing: -1px;
+}
+
+/* Pairing Code */
+.pairing-code-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
   animation: fadeInUp 0.5s ease;
 }
 
@@ -851,21 +868,22 @@
 
 .pairing-code-label {
   font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.4);
-  letter-spacing: 2px;
+  color: rgba(255, 255, 255, 0.35);
+  letter-spacing: 3px;
   text-transform: uppercase;
+  text-align: center;
 }
 
 .pairing-code-tiles {
   display: flex;
-  gap: 6px;
+  gap: 10px;
 }
 
 .pairing-tile {
-  width: 44px;
-  height: 52px;
+  width: 56px;
+  height: 68px;
   background: #262626;
   border-radius: 4px;
   display: flex;
@@ -886,7 +904,7 @@
 }
 .pairing-tile span {
   font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;
-  font-size: 24px;
+  font-size: 30px;
   font-weight: 700;
   color: #fff;
   z-index: 1;
@@ -896,6 +914,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  width: 100%;
 }
 .pairing-timer-bar {
   flex: 1;

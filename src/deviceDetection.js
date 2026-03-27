@@ -10,8 +10,11 @@ export function detectDevice() {
   // Mobile detection
   const isMobileAgent = /android|iphone|ipad|ipod|mobile|phone/i.test(ua);
 
+  // Fine pointer (mouse) means laptop/desktop — never classify as TV
+  const hasFinePointer = window.matchMedia('(pointer: fine)').matches;
+
   if (isMobileAgent || w < 768) return 'mobile';
-  if (isTVAgent) return 'tv';
+  if (isTVAgent && !hasFinePointer) return 'tv';
   return 'desktop';
 }
 

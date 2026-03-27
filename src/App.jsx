@@ -279,17 +279,7 @@ function DesktopMode({ onEnterTV }) {
 
   return (
     <div className="page-wrapper">
-      <Header muted={muted} onVolumeClick={handleVolumeClick} />
-
-      {/* TV Mode toggle button */}
-      <button className="tv-mode-toggle" onClick={onEnterTV} title="Enter TV Mode">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
-          <line x1="8" y1="21" x2="16" y2="21"/>
-          <line x1="12" y1="17" x2="12" y2="21"/>
-        </svg>
-        <span>TV Mode</span>
-      </button>
+      <Header muted={muted} onVolumeClick={handleVolumeClick} onEnterTV={onEnterTV} />
 
       <div className="single-screen">
         <div className="hero-area">

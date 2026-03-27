@@ -238,6 +238,17 @@ export default function TVMode({ onExitTV }) {
     }, 60000);
   }
 
+  // Exit TV mode on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && onExitTV) {
+        onExitTV();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onExitTV]);
+
   // Init audio on interaction
   useEffect(() => {
     document.addEventListener('click', initAudio);
@@ -255,13 +266,19 @@ export default function TVMode({ onExitTV }) {
 
   return (
     <div className="tv-mode" style={{ '--tv-accent-color': accentColor }}>
-      <div className="tv-board-wrap">
-        <Board ref={boardRef} soundEngine={soundEngineRef.current} />
-      </div>
+      {/* Before pairing: centered logo + code */}
+      {!paired && (
+        <div className="tv-pairing-screen">
+          <div className="tv-logo">Flapstr.</div>
+          {code && <PairingCode code={code} secondsLeft={secondsLeft} />}
+        </div>
+      )}
 
-      {/* Pairing code overlay - bottom left */}
-      {!paired && code && (
-        <PairingCode code={code} secondsLeft={secondsLeft} />
+      {/* After pairing: fullscreen board */}
+      {paired && (
+        <div className="tv-board-wrap">
+          <Board ref={boardRef} soundEngine={soundEngineRef.current} />
+        </div>
       )}
 
       {/* Connected indicator - bottom right */}
