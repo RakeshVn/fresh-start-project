@@ -4,7 +4,7 @@ import Header from './components/Header';
 import Hero from './components/Hero';
 import TVMode from './components/TVMode';
 import MobileMode from './components/MobileMode';
-import MessageComposer from './components/MessageComposer';
+import MessageComposer, { linesToDraftText } from './components/MessageComposer';
 import { SoundEngine } from './SoundEngine';
 import { MESSAGES, MESSAGE_INTERVAL, TOTAL_TRANSITION, CHARSET, splitGraphemes, isEmojiChar, getClockLines } from './constants';
 import { detectDevice } from './deviceDetection';
@@ -20,11 +20,6 @@ const msgLabel = (lines) => lines.find(l => l.trim()) || 'Message';
 
 /** Stable id for the homepage clock-only message (second slide in rotation). */
 const HOME_CLOCK_MESSAGE_ID = 1;
-
-function buildClockMessageLines() {
-  const timeStr = new Date().toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
-  return ['', '', timeStr, '', '', ''];
-}
 
 export default function App() {
   const [mode, setMode] = useState(() => detectDevice());
@@ -107,6 +102,7 @@ function DesktopMode({ onPairDevice }) {
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [addingNew, setAddingNew] = useState(false);
+  const [editingMessageId, setEditingMessageId] = useState(null);
   const [draftText, setDraftText] = useState('');
   const showPanelRef = useRef(false);
   const showShortcutsRef = useRef(false);
@@ -181,6 +177,7 @@ function DesktopMode({ onPairDevice }) {
   const openPanel = useCallback(() => {
     setShowPanel(true);
     setAddingNew(false);
+    setEditingMessageId(null);
   }, []);
 
   const closeMessagesUi = useCallback(() => {
@@ -188,6 +185,7 @@ function DesktopMode({ onPairDevice }) {
     setShowModal(false);
     setDraftText('');
     setAddingNew(false);
+    setEditingMessageId(null);
   }, []);
 
   const submitNewMessage = useCallback((lines) => {
@@ -204,8 +202,45 @@ function DesktopMode({ onPairDevice }) {
     clearInterval(rotatorTimerRef.current);
   }, []);
 
+  const finishComposer = useCallback((lines) => {
+    const trimmed = lines.map((l) => l.trim());
+    if (!trimmed.some((l) => l)) return;
+    if (editingMessageId !== null) {
+      const eid = editingMessageId;
+      setMessages((prev) => {
+        const next = prev.map((m) => (m.id === eid ? { ...m, lines: trimmed } : m));
+        messagesRef.current = next;
+        return next;
+      });
+      setEditingMessageId(null);
+      setDraftText('');
+      if (activeMsgId === eid) {
+        boardRef.current?.displayMessage(trimmed);
+      }
+      return;
+    }
+    submitNewMessage(lines);
+  }, [editingMessageId, activeMsgId, submitNewMessage]);
+
+  const cancelComposer = useCallback(() => {
+    if (editingMessageId !== null) {
+      setEditingMessageId(null);
+      setDraftText('');
+    } else {
+      closeMessagesUi();
+    }
+  }, [editingMessageId, closeMessagesUi]);
+
+  const startEditMessage = useCallback((msg, e) => {
+    e.stopPropagation();
+    setAddingNew(false);
+    setEditingMessageId(msg.id);
+    setDraftText(linesToDraftText(msg.lines));
+  }, []);
+
   const deleteMessage = useCallback((id, e) => {
     e.stopPropagation();
+    setEditingMessageId((eid) => (eid === id ? null : eid));
     setMessages(prev => {
       const next = prev.filter(m => m.id !== id);
       messagesRef.current = next;
@@ -348,24 +383,35 @@ function DesktopMode({ onPairDevice }) {
                             <div className="msg-item-label">{msgLabel(msg.lines)}</div>
                             <div className="msg-item-preview">{msg.lines.filter(l => l.trim()).join(' · ')}</div>
                           </div>
-                          <button className="msg-item-delete" onClick={(e) => deleteMessage(msg.id, e)}>×</button>
+                          <div className="msg-item-actions">
+                            {msg.id !== HOME_CLOCK_MESSAGE_ID && (
+                              <button type="button" className="msg-item-edit" title="Edit" onClick={(e) => startEditMessage(msg, e)}>
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                </svg>
+                              </button>
+                            )}
+                            <button type="button" className="msg-item-delete" onClick={(e) => deleteMessage(msg.id, e)}>×</button>
+                          </div>
                         </div>
                       ))}
                     </div>
-                    {addingNew ? (
+                    {(addingNew || editingMessageId !== null) ? (
                       <MessageComposer
                         className="add-form"
                         value={draftText}
                         onChange={setDraftText}
                         filterLine={filterLine}
-                        title="New message"
+                        title={editingMessageId !== null ? 'Edit message' : 'New message'}
                         variant="panel"
-                        onCancel={closeMessagesUi}
-                        onSubmit={submitNewMessage}
+                        submitLabel={editingMessageId !== null ? 'Save' : 'Add'}
+                        onCancel={cancelComposer}
+                        onSubmit={finishComposer}
                         autoFocus
                       />
                     ) : (
-                      <button className="add-new-btn" onClick={() => setAddingNew(true)}>+ New message</button>
+                      <button type="button" className="add-new-btn" onClick={() => { setEditingMessageId(null); setAddingNew(true); setDraftText(''); }}>+ New message</button>
                     )}
                   </div>
                 </>
@@ -421,24 +467,35 @@ function DesktopMode({ onPairDevice }) {
                       <div className="msg-item-label">{msgLabel(msg.lines)}</div>
                       <div className="msg-item-preview">{msg.lines.filter(l => l.trim()).join(' · ')}</div>
                     </div>
-                    <button className="msg-item-delete" onClick={(e) => deleteMessage(msg.id, e)}>×</button>
+                    <div className="msg-item-actions">
+                      {msg.id !== HOME_CLOCK_MESSAGE_ID && (
+                        <button type="button" className="msg-item-edit" title="Edit" onClick={(e) => startEditMessage(msg, e)}>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                          </svg>
+                        </button>
+                      )}
+                      <button type="button" className="msg-item-delete" onClick={(e) => deleteMessage(msg.id, e)}>×</button>
+                    </div>
                   </div>
                 ))}
               </div>
-              {addingNew ? (
+              {(addingNew || editingMessageId !== null) ? (
                 <MessageComposer
                   className="add-form modal-add-form"
                   value={draftText}
                   onChange={setDraftText}
                   filterLine={filterLine}
-                  title="New message"
+                  title={editingMessageId !== null ? 'Edit message' : 'New message'}
                   variant="panel"
-                  onCancel={closeMessagesUi}
-                  onSubmit={submitNewMessage}
+                  submitLabel={editingMessageId !== null ? 'Save' : 'Add'}
+                  onCancel={cancelComposer}
+                  onSubmit={finishComposer}
                   autoFocus
                 />
               ) : (
-                <button className="add-new-btn modal-add-new-btn" onClick={() => setAddingNew(true)}>+ New message</button>
+                <button type="button" className="add-new-btn modal-add-new-btn" onClick={() => { setEditingMessageId(null); setAddingNew(true); setDraftText(''); }}>+ New message</button>
               )}
             </div>
           </div>
