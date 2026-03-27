@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { sendCommand, disconnect, getPairingStatus } from '../api';
+import { sendCommand, disconnect, getPairingStatus, subscribeToEvents } from '../api';
 import { CHARSET, EMOJI_CATEGORIES, splitGraphemes, isEmojiChar } from '../constants';
 
 const VALID_CHARS = new Set(CHARSET);
@@ -84,6 +84,17 @@ export default function RemoteControl({ pairingId, deviceId, onDisconnect }) {
   const [textColor, setTextColor] = useState('#FFFFFF');
 
   const statusInterval = useRef(null);
+
+  // Listen for TV disconnect via SSE
+  useEffect(() => {
+    const es = subscribeToEvents(pairingId, (data) => {
+      if (data.type === 'tv_disconnected') {
+        localStorage.removeItem('flapstr_mobile_pairing');
+        onDisconnect();
+      }
+    });
+    return () => es.close();
+  }, [pairingId, onDisconnect]);
 
   // Periodic status check
   useEffect(() => {

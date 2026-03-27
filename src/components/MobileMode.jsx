@@ -62,13 +62,7 @@ export default function MobileMode() {
       {/* Success animation overlay */}
       {showSuccess && (
         <div className="success-overlay">
-          <div className="success-checkmark">
-            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-              <polyline points="22 4 12 14.01 9 11.01"/>
-            </svg>
-          </div>
-          <p>Connected!</p>
+          <p className="success-text">Connected.</p>
         </div>
       )}
 

@@ -3,7 +3,7 @@ import Board from './Board';
 import PairingCode from './PairingCode';
 import { SoundEngine } from '../SoundEngine';
 import { MESSAGES, MESSAGE_INTERVAL, TOTAL_TRANSITION, CHARSET, SCRAMBLE_DURATION, FLIP_DURATION, STAGGER_DELAY } from '../constants';
-import { createPairing, refreshPairing, reconnectPairing, subscribeToEvents, getPairingStatus } from '../api';
+import { createPairing, refreshPairing, reconnectPairing, subscribeToEvents, getPairingStatus, sendCommand } from '../api';
 
 const VALID_CHARS = new Set(CHARSET);
 const filterLine = (s) =>
@@ -338,6 +338,22 @@ export default function TVMode({ onExitTV }) {
       document.removeEventListener('keydown', initAudio);
     };
   }, [initAudio]);
+
+  // Keep refs in sync for cleanup
+  const pairingIdRef = useRef(pairingId);
+  const tvSessionIdRef = useRef(tvSessionId);
+  useEffect(() => { pairingIdRef.current = pairingId; }, [pairingId]);
+  useEffect(() => { tvSessionIdRef.current = tvSessionId; }, [tvSessionId]);
+
+  // Broadcast tv_disconnected on unmount
+  useEffect(() => {
+    return () => {
+      if (pairingIdRef.current) {
+        sendCommand(pairingIdRef.current, tvSessionIdRef.current, 'tv_disconnected', {}).catch(() => {});
+        localStorage.removeItem('flapstr_tv_pairing');
+      }
+    };
+  }, []);
 
   // Apply text color via CSS custom property
   useEffect(() => {
