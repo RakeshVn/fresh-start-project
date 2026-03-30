@@ -125,6 +125,27 @@ const css = `
   z-index: 20;
   pointer-events: none;
 }
+.solari-flap-stack {
+  position: absolute;
+  bottom: -12px;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  z-index: -1;
+}
+.solari-flap-stack-line {
+  height: 2px;
+  background: #0f0f0f;
+  border-radius: 0 0 1px 1px;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.03), inset 0 -1px 0 rgba(0,0,0,0.4);
+}
+.solari-flap-stack-line:nth-child(1) { width: calc(100% - 4px); }
+.solari-flap-stack-line:nth-child(2) { width: calc(100% - 8px); }
+.solari-flap-stack-line:nth-child(3) { width: calc(100% - 12px); opacity: 0.7; }
+.solari-flap-stack-line:nth-child(4) { width: calc(100% - 16px); opacity: 0.4; }
 `;
 
 // ── Character set ────────────────────────────────────────────────────
@@ -216,11 +237,19 @@ function SolariSegment({ target, width, height, fontSize, flipSpeed }) {
   const half = height / 2;
 
   return (
-    <li className="solari-segment" style={{ width, height, fontSize }}>
-      <div ref={frontRef} className="solari-front" style={{ lineHeight: height + 'px' }} />
-      <div ref={flipBackRef} className="solari-flip-back" style={{ lineHeight: height + 'px', transformOrigin: `0 ${half}px` }} />
-      <div ref={flipFrontRef} className="solari-flip-front" style={{ transformOrigin: `0 ${half}px` }} />
-      <div ref={backRef} className="solari-back" />
+    <li className="solari-segment" style={{ width, height: height + 14, fontSize, paddingBottom: 14 }}>
+      <div style={{ position: 'relative', width, height }}>
+        <div ref={frontRef} className="solari-front" style={{ lineHeight: height + 'px' }} />
+        <div ref={flipBackRef} className="solari-flip-back" style={{ lineHeight: height + 'px', transformOrigin: `0 ${half}px` }} />
+        <div ref={flipFrontRef} className="solari-flip-front" style={{ transformOrigin: `0 ${half}px` }} />
+        <div ref={backRef} className="solari-back" />
+        <div className="solari-flap-stack">
+          <div className="solari-flap-stack-line" />
+          <div className="solari-flap-stack-line" />
+          <div className="solari-flap-stack-line" />
+          <div className="solari-flap-stack-line" />
+        </div>
+      </div>
     </li>
   );
 }
