@@ -237,11 +237,19 @@ function SolariSegment({ target, width, height, fontSize, flipSpeed }) {
   const half = height / 2;
 
   return (
-    <li className="solari-segment" style={{ width, height, fontSize }}>
-      <div ref={frontRef} className="solari-front" style={{ lineHeight: height + 'px' }} />
-      <div ref={flipBackRef} className="solari-flip-back" style={{ lineHeight: height + 'px', transformOrigin: `0 ${half}px` }} />
-      <div ref={flipFrontRef} className="solari-flip-front" style={{ transformOrigin: `0 ${half}px` }} />
-      <div ref={backRef} className="solari-back" />
+    <li className="solari-segment" style={{ width, height: height + 14, fontSize, paddingBottom: 14 }}>
+      <div style={{ position: 'relative', width, height }}>
+        <div ref={frontRef} className="solari-front" style={{ lineHeight: height + 'px' }} />
+        <div ref={flipBackRef} className="solari-flip-back" style={{ lineHeight: height + 'px', transformOrigin: `0 ${half}px` }} />
+        <div ref={flipFrontRef} className="solari-flip-front" style={{ transformOrigin: `0 ${half}px` }} />
+        <div ref={backRef} className="solari-back" />
+        <div className="solari-flap-stack">
+          <div className="solari-flap-stack-line" />
+          <div className="solari-flap-stack-line" />
+          <div className="solari-flap-stack-line" />
+          <div className="solari-flap-stack-line" />
+        </div>
+      </div>
     </li>
   );
 }
