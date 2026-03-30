@@ -103,27 +103,29 @@ const css = `
   content: '';
   position: absolute;
   top: 50%;
-  left: -5px;
+  left: -6px;
   transform: translateY(-50%);
-  width: 10px;
-  height: 10px;
+  width: 12px;
+  height: 14px;
   border-radius: 50%;
-  background: #1a1a1a;
-  z-index: 20;
+  background: #111;
+  z-index: 25;
   pointer-events: none;
+  box-shadow: inset 2px 0 3px rgba(0,0,0,0.8), inset 0 1px 2px rgba(0,0,0,0.5);
 }
 .solari-segment::after {
   content: '';
   position: absolute;
   top: 50%;
-  right: -5px;
+  right: -6px;
   transform: translateY(-50%);
-  width: 10px;
-  height: 10px;
+  width: 12px;
+  height: 14px;
   border-radius: 50%;
-  background: #1a1a1a;
-  z-index: 20;
+  background: #111;
+  z-index: 25;
   pointer-events: none;
+  box-shadow: inset -2px 0 3px rgba(0,0,0,0.8), inset 0 1px 2px rgba(0,0,0,0.5);
 }
 .solari-flap-stack {
   position: absolute;
