@@ -199,6 +199,8 @@
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }
 .ctrl-btn:hover { background: rgba(26, 26, 26, 0.95); color: #fff; }
+.ctrl-btn--active { background: rgba(255, 255, 255, 0.9); color: #1a1a1a; }
+.ctrl-btn--active:hover { background: #fff; color: #1a1a1a; }
 
 /* transparent full-screen backdrop to capture outside clicks */
 .popup-backdrop {
@@ -228,6 +230,53 @@
   text-transform: uppercase;
   letter-spacing: 1px;
   padding: 12px 16px 6px;
+}
+
+/* cast popup */
+.cast-popup {
+  min-width: 260px;
+  padding-bottom: 8px;
+}
+
+.cast-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.75);
+  text-align: left;
+  transition: background 0.15s, color 0.15s;
+}
+.cast-option:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: #fff;
+}
+.cast-option svg {
+  flex-shrink: 0;
+  opacity: 0.65;
+}
+.cast-option:hover svg { opacity: 1; }
+
+.cast-option-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.cast-option-title {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1px;
+}
+.cast-option-desc {
+  font-size: 10.5px;
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: 400;
+  white-space: normal;
+  line-height: 1.35;
 }
 
 /* shortcuts popup */

@@ -8,6 +8,7 @@ import MessageComposer, { linesToDraftText } from './components/MessageComposer'
 import { SoundEngine } from './SoundEngine';
 import { MESSAGES, HOME_MESSAGE_PAUSE_MS, TOTAL_TRANSITION, CHARSET, splitGraphemes, isEmojiChar, getClockLines } from './constants';
 import { detectDevice } from './deviceDetection';
+import { useCastSession } from './hooks/useCastSession';
 import './App.css';
 
 const VALID_CHARS = new Set(CHARSET);
@@ -22,8 +23,15 @@ const msgLabel = (lines) => lines.find(l => l.trim()) || 'Message';
 const HOME_CLOCK_MESSAGE_ID = 1;
 
 export default function App() {
-  const [mode, setMode] = useState(() => detectDevice());
-  const [tvModeForced, setTvModeForced] = useState(false);
+  const [mode, setMode] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('tv') === '1') return 'tv';
+    return detectDevice();
+  });
+  const [tvModeForced, setTvModeForced] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('tv') === '1';
+  });
   const [mobilePairingOpen, setMobilePairingOpen] = useState(false);
 
   // Listen for resize to update mode detection
@@ -41,8 +49,8 @@ export default function App() {
     if (mode !== 'mobile') setMobilePairingOpen(false);
   }, [mode]);
 
-  // Mobile pairing flow (opened from homepage header)
-  if (mobilePairingOpen && mode === 'mobile') {
+  // Mobile pairing flow (opened from homepage header on mobile, or via cast on any device)
+  if (mobilePairingOpen) {
     return <MobileMode onClose={() => setMobilePairingOpen(false)} />;
   }
 
@@ -58,6 +66,8 @@ export default function App() {
     );
   }
 
+  const tvUrl = `${window.location.origin}${window.location.pathname}?tv=1`;
+
   // Desktop + mobile homepage — same UI; Pair Device opens TV mode or mobile pairing
   return (
     <DesktopMode
@@ -67,12 +77,14 @@ export default function App() {
           ? () => setMobilePairingOpen(true)
           : () => setTvModeForced(true)
       }
+      tvUrl={tvUrl}
     />
   );
 }
 
 // ── Desktop Mode (original UI) ──────────────────────────────────────────
-function DesktopMode({ onPairDevice, isMobile }) {
+function DesktopMode({ onPairDevice, isMobile, tvUrl }) {
+  const { isAvailable: isCastAvailable, isConnected: isCasting, startCasting, stopCasting } = useCastSession();
   const boardRef = useRef(null);
   const soundEngineRef = useRef(new SoundEngine());
   const [muted, setMuted] = useState(false);
@@ -101,6 +113,7 @@ function DesktopMode({ onPairDevice, isMobile }) {
 
   const [showPanel, setShowPanel] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const [showCast, setShowCast] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [addingNew, setAddingNew] = useState(false);
   const [editingMessageId, setEditingMessageId] = useState(null);
@@ -417,6 +430,44 @@ function DesktopMode({ onPairDevice, isMobile }) {
                     ) : (
                       <button type="button" className="add-new-btn" onClick={() => { setEditingMessageId(null); setAddingNew(true); setDraftText(''); }}>+ New message</button>
                     )}
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Cast popup */}
+            <div className="popup-wrap">
+              <button
+                className={`ctrl-btn${isCasting ? ' ctrl-btn--active' : ''}`}
+                onClick={() => setShowCast(v => !v)}
+                title={isCasting ? 'Stop casting' : 'Cast'}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M2 16.1A5 5 0 0 1 5.9 20M2 12.05A9 9 0 0 1 9.95 20M2 8V6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-6"/>
+                  <line x1="2" y1="20" x2="2.01" y2="20"/>
+                </svg>
+              </button>
+              {showCast && (
+                <>
+                  <div className="popup-backdrop" onClick={() => setShowCast(false)} />
+                  <div className="popup cast-popup">
+                    <div className="popup-section-label">Cast</div>
+                    <button
+                      className="cast-option"
+                      onClick={() => {
+                        setShowCast(false);
+                        isCasting ? stopCasting() : startCasting(tvUrl);
+                      }}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M2 16.1A5 5 0 0 1 5.9 20M2 12.05A9 9 0 0 1 9.95 20M2 8V6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-6"/>
+                        <line x1="2" y1="20" x2="2.01" y2="20"/>
+                      </svg>
+                      <div className="cast-option-text">
+                        <span className="cast-option-title">{isCasting ? 'Stop casting' : 'Cast to TV'}</span>
+                        <span className="cast-option-desc">{isCasting ? 'Disconnect from external display' : 'Send to a connected TV or monitor'}</span>
+                      </div>
+                    </button>
                   </div>
                 </>
               )}
